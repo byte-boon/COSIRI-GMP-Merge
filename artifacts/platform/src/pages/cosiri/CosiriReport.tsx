@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import QRCode from "react-qr-code";
 import { useRoute, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
@@ -340,6 +341,19 @@ export default function CosiriReport() {
             <button className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl font-medium flex items-center gap-2 text-xs transition-colors">
               <Download className="w-3.5 h-3.5" /> Export PDF
             </button>
+            {/* QR Code */}
+            <div className="mt-4 flex flex-col items-center gap-1.5">
+              <div className="p-2 bg-white rounded-xl shadow-lg">
+                <QRCode
+                  value={typeof window !== "undefined" ? window.location.href : `report/${id}`}
+                  size={80}
+                  fgColor="#0f172a"
+                  bgColor="#ffffff"
+                  level="M"
+                />
+              </div>
+              <p className="text-white/35 text-[10px] tracking-wide uppercase">Scan to share</p>
+            </div>
           </div>
         </div>
       </div>
