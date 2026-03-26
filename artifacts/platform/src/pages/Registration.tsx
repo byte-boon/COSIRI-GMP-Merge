@@ -4,9 +4,32 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
-import { Building, ShieldCheck, Activity, ArrowRight, Factory, CheckCircle2 } from "lucide-react";
+import { Building, ShieldCheck, Activity, ArrowRight, Factory, CheckCircle2, ChevronDown } from "lucide-react";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useCreateCompany } from "@workspace/api-client-react";
+
+const INDUSTRIES = [
+  "Aerospace & Defence",
+  "Agriculture & Food Production",
+  "Automotive",
+  "Chemicals & Materials",
+  "Construction & Real Estate",
+  "Consumer Goods & Retail",
+  "Education",
+  "Energy & Utilities",
+  "Financial Services & Insurance",
+  "Healthcare & Pharmaceuticals",
+  "Hospitality & Tourism",
+  "Information Technology & Software",
+  "Logistics & Transportation",
+  "Manufacturing",
+  "Media & Entertainment",
+  "Mining & Resources",
+  "Professional Services",
+  "Public Sector & Government",
+  "Telecommunications",
+  "Other",
+];
 
 const formSchema = z.object({
   name: z.string().min(2, "Company name is required"),
@@ -182,11 +205,19 @@ export default function Registration() {
 
             <div>
               <label className="text-sm font-medium mb-1.5 block text-foreground">Industry</label>
-              <input
-                {...form.register("industry")}
-                className="w-full px-4 py-3 rounded-xl bg-card border border-border focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
-                placeholder="Manufacturing, Tech, Pharma, etc."
-              />
+              <div className="relative">
+                <select
+                  {...form.register("industry")}
+                  defaultValue=""
+                  className="w-full px-4 py-3 rounded-xl bg-card border border-border focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none appearance-none text-foreground pr-10 cursor-pointer"
+                >
+                  <option value="" disabled className="text-muted-foreground">Select your industry…</option>
+                  {INDUSTRIES.map((ind) => (
+                    <option key={ind} value={ind}>{ind}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              </div>
               {form.formState.errors.industry && <p className="text-destructive text-xs mt-1">{form.formState.errors.industry.message}</p>}
             </div>
 
