@@ -65,12 +65,24 @@ router.put("/gmp/assessments/:id/responses", async (req, res) => {
     if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
     const responses = req.body;
-    const values = Object.values(responses) as string[];
-    const compliantCount = values.filter(v => v === "compliant").length;
-    const scoredCount = values.filter(v => v !== "na").length;
-    const overallScore = scoredCount > 0 ? Math.round((compliantCount / scoredCount) * 100) : 0;
-
-    const allDone = values.length > 0 && values.every(v => v !== undefined);
+    // Support both legacy string format and new { score, na, notes, attachments } format
+    const values = Object.values(responses) as (string | { score?: number | null; na?: boolean })[];
+    let scoredCount = 0;
+    let scoreSum = 0;
+    for (const v of values) {
+      if (typeof v === "string") {
+        if (v === "na") continue;
+        scoredCount++;
+        if (v === "compliant") scoreSum += 5;
+        else if (v === "partial") scoreSum += 3;
+        else if (v === "noncompliant") scoreSum += 1;
+      } else if (v && typeof v === "object") {
+        if (v.na) continue;
+        if (v.score != null) { scoredCount++; scoreSum += v.score; }
+      }
+    }
+    const overallScore = scoredCount > 0 ? Math.round((scoreSum / (scoredCount * 5)) * 100) : 0;
+    const allDone = values.length > 0;
     const status = allDone ? "completed" : "in_progress";
 
     const [updated] = await db.update(gmpAssessments)
