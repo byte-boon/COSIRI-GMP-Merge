@@ -1,3 +1,47 @@
+export const BAND_DESCRIPTIONS: Record<number, {
+  title: string;
+  summary: string;
+  criteria: string;
+  evidence: string;
+}> = {
+  0: {
+    title: "No Readiness",
+    summary: "No ambition, targets, or formal activities exist.",
+    criteria: "The organisation has not yet begun addressing this dimension.",
+    evidence: "No policies, no tracking, no accountability structures.",
+  },
+  1: {
+    title: "Initial Awareness",
+    summary: "Awareness exists but efforts are ad-hoc and unstructured.",
+    criteria: "Early recognition of importance with no formal framework.",
+    evidence: "Informal discussions underway; no targets or processes defined.",
+  },
+  2: {
+    title: "Developing",
+    summary: "Structured plans are forming with early implementation.",
+    criteria: "Initial targets set and basic processes being put in place.",
+    evidence: "Some documentation exists; limited integration across business units.",
+  },
+  3: {
+    title: "Integrated (Baseline)",
+    summary: "Systematic approach embedded in operations with measurable results.",
+    criteria: "Processes documented, KPIs tracked, leadership accountability established.",
+    evidence: "Regular internal reporting; cross-functional coordination in place.",
+  },
+  4: {
+    title: "Advanced",
+    summary: "Data-driven optimisation with continuous improvement practices.",
+    criteria: "Targets consistently met or exceeded; analytics-informed decisions.",
+    evidence: "Benchmarking against peers; advanced tooling and integration across value chain.",
+  },
+  5: {
+    title: "Industry Leading",
+    summary: "Best-in-class performance setting sector benchmarks.",
+    criteria: "Recognised externally as an innovator; influencing industry standards.",
+    evidence: "Third-party verification, awards, or peer citation as a reference practice.",
+  },
+};
+
 export type CosiriDimension = {
   id: string;
   pillar: string;

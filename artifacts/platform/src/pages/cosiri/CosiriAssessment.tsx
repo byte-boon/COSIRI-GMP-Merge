@@ -1,10 +1,24 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { CheckCircle2, ChevronRight, Save, Activity } from "lucide-react";
+import { CheckCircle2, Save, Activity, Info } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { COSIRI_DATA, BUILDING_BLOCKS } from "@/lib/cosiri-data";
+import { COSIRI_DATA, BUILDING_BLOCKS, BAND_DESCRIPTIONS } from "@/lib/cosiri-data";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useCreateCosiriAssessment, useSaveCosiriAnswers } from "@workspace/api-client-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+const BAND_COLORS: Record<number, string> = {
+  0: "text-slate-400",
+  1: "text-red-400",
+  2: "text-orange-400",
+  3: "text-amber-500",
+  4: "text-blue-500",
+  5: "text-green-500",
+};
 
 export default function CosiriAssessment() {
   const [, setLocation] = useLocation();
@@ -26,23 +40,23 @@ export default function CosiriAssessment() {
   const handleSubmit = async () => {
     if (!company) return;
     try {
-      const overallScore = Object.values(answers).reduce((a,b)=>a+b, 0) / COSIRI_DATA.length;
-      
+      const overallScore = Object.values(answers).reduce((a, b) => a + b, 0) / COSIRI_DATA.length;
+
       const assessment = await createAssessment({
         data: {
           companyId: company.id,
           companyName: company.name,
           industry: company.industry,
           status: "completed",
-          overallScore: Math.round(overallScore)
-        }
+          overallScore: Math.round(overallScore),
+        },
       });
 
       const answerPayload = Object.entries(answers).map(([dimensionId, score]) => ({
         assessmentId: assessment.id,
         dimensionId,
         score,
-        notes: ""
+        notes: "",
       }));
 
       await saveAnswers({ id: assessment.id, data: answerPayload });
@@ -57,7 +71,7 @@ export default function CosiriAssessment() {
       <div className="mb-8 flex items-end justify-between">
         <div>
           <h1 className="text-3xl font-display font-bold mb-2">Run Assessment</h1>
-          <p className="text-muted-foreground">Select the maturity band for each dimension.</p>
+          <p className="text-muted-foreground">Select the maturity band for each dimension. Hover over the <Info className="inline w-3.5 h-3.5 mb-0.5" /> icon for requirements.</p>
         </div>
         <div className="flex flex-col items-end">
           <span className="text-sm font-medium mb-1">{progress}% Complete</span>
@@ -80,15 +94,15 @@ export default function CosiriAssessment() {
               <button
                 key={block}
                 onClick={() => setActiveBlock(block)}
-                className={`w-full text-left p-4 rounded-xl border transition-all flex flex-col gap-2 ${isActive ? 'bg-card border-primary shadow-sm ring-1 ring-primary/20' : 'bg-transparent border-transparent hover:bg-muted/50'}`}
+                className={`w-full text-left p-4 rounded-xl border transition-all flex flex-col gap-2 ${isActive ? "bg-card border-primary shadow-sm ring-1 ring-primary/20" : "bg-transparent border-transparent hover:bg-muted/50"}`}
               >
                 <div className="flex items-start justify-between w-full">
-                  <span className={`font-semibold text-sm ${isActive ? 'text-primary' : 'text-foreground'}`}>{block}</span>
+                  <span className={`font-semibold text-sm ${isActive ? "text-primary" : "text-foreground"}`}>{block}</span>
                   {isComplete && <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />}
                 </div>
                 <span className="text-xs text-muted-foreground font-mono">{answeredInBlock} / {blockDims.length} answered</span>
               </button>
-            )
+            );
           })}
         </div>
 
@@ -108,19 +122,61 @@ export default function CosiriAssessment() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {dim.options.map(opt => {
                   const isSelected = answers[dim.id] === opt.score;
+                  const band = BAND_DESCRIPTIONS[opt.score];
                   return (
                     <button
                       key={opt.score}
                       onClick={() => handleAnswer(dim.id, opt.score)}
-                      className={`text-left p-4 rounded-xl border transition-all ${isSelected ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border bg-background hover:border-primary/40'}`}
+                      className={`text-left p-4 rounded-xl border transition-all ${isSelected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border bg-background hover:border-primary/40"}`}
                     >
+                      {/* Band header row */}
                       <div className="flex justify-between items-center mb-2">
-                        <span className={`font-bold ${isSelected ? 'text-primary' : 'text-foreground'}`}>{opt.label}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`font-bold ${isSelected ? "text-primary" : "text-foreground"}`}>
+                            {opt.label}
+                          </span>
+                          {/* Info tooltip */}
+                          <Tooltip delayDuration={200}>
+                            <TooltipTrigger
+                              asChild
+                              onClick={e => e.stopPropagation()}
+                            >
+                              <span className="cursor-help">
+                                <Info className={`w-3.5 h-3.5 ${BAND_COLORS[opt.score]} opacity-70 hover:opacity-100 transition-opacity`} />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side="top"
+                              className="max-w-xs bg-popover text-popover-foreground border border-border rounded-xl shadow-xl p-0 overflow-hidden"
+                            >
+                              <div className="px-4 pt-3 pb-2 border-b border-border bg-muted/40">
+                                <p className="font-bold text-sm text-foreground">{opt.label} — {band.title}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">{band.summary}</p>
+                              </div>
+                              <div className="px-4 py-3 space-y-2">
+                                <div>
+                                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">Criteria</p>
+                                  <p className="text-xs text-foreground leading-snug">{band.criteria}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">Evidence</p>
+                                  <p className="text-xs text-foreground leading-snug">{band.evidence}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">This Dimension</p>
+                                  <p className="text-xs text-foreground leading-snug">{opt.description}</p>
+                                </div>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
                         {isSelected && <CheckCircle2 className="w-4 h-4 text-primary" />}
                       </div>
+
+                      {/* Description */}
                       <p className="text-sm text-muted-foreground leading-snug">{opt.description}</p>
                     </button>
-                  )
+                  );
                 })}
               </div>
             </div>
