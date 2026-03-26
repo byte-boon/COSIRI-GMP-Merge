@@ -55,18 +55,26 @@ export const cosiriEvidence = pgTable("cosiri_evidence", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertCosiriEvidenceSchema = createInsertSchema(cosiriEvidence).omit({ id: true, createdAt: true });
-export type InsertCosiriEvidence = z.infer<typeof insertCosiriEvidenceSchema>;
-export type CosiriEvidence = typeof cosiriEvidence.$inferSelect;
+export const cosiriSiteProfiles = pgTable("cosiri_site_profiles", {
+  id: serial("id").primaryKey(),
+  assessmentId: integer("assessment_id").notNull().unique(),
+  siteName: text("site_name"),
+  location: text("location"),
+  subSector: text("sub_sector"),
+  employeeCount: text("employee_count"),
+  productionArea: text("production_area"),
+  productsManufactured: text("products_manufactured"),
+  assessorName: text("assessor_name"),
+  assessorCredentials: text("assessor_credentials"),
+  cosiriVersion: text("cosiri_version").default("COSIRI-24"),
+  assessmentDate: text("assessment_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
-export const insertCosiriAssessmentSchema = createInsertSchema(cosiriAssessments).omit({ id: true, createdAt: true, updatedAt: true });
-export type InsertCosiriAssessment = z.infer<typeof insertCosiriAssessmentSchema>;
 export type CosiriAssessment = typeof cosiriAssessments.$inferSelect;
-
-export const insertCosiriAnswerSchema = createInsertSchema(cosiriAnswers).omit({ id: true, createdAt: true });
-export type InsertCosiriAnswer = z.infer<typeof insertCosiriAnswerSchema>;
 export type CosiriAnswer = typeof cosiriAnswers.$inferSelect;
+export type CosiriSiteProfile = typeof cosiriSiteProfiles.$inferSelect;
 
-export const insertCosiriAiInsightSchema = createInsertSchema(cosiriAiInsights).omit({ id: true, createdAt: true });
-export type InsertCosiriAiInsight = z.infer<typeof insertCosiriAiInsightSchema>;
-export type CosiriAiInsight = typeof cosiriAiInsights.$inferSelect;
+export const insertCosiriSiteProfileSchema = createInsertSchema(cosiriSiteProfiles).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertCosiriSiteProfile = z.infer<typeof insertCosiriSiteProfileSchema>;

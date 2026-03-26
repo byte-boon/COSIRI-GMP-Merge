@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { cosiriAssessments, cosiriAnswers, cosiriAiInsights, cosiriUsageCounters, cosiriEvidence, cosiriImprovementPlans } from "@workspace/db/schema";
+import { cosiriAssessments, cosiriAnswers, cosiriAiInsights, cosiriUsageCounters, cosiriEvidence, cosiriImprovementPlans, cosiriSiteProfiles } from "@workspace/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import OpenAI from "openai";
 import { ObjectStorageService } from "../lib/objectStorage.js";
@@ -579,6 +579,55 @@ router.get("/cosiri/assessments/:id/improvement-plan", async (req, res) => {
     return res.json(plan);
   } catch (err) {
     console.error("getImprovementPlan error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/cosiri/assessments/:id/profile", async (req, res) => {
+  try {
+    const assessmentId = parseInt(req.params.id);
+    if (isNaN(assessmentId)) return res.status(400).json({ error: "Invalid id" });
+
+    const [profile] = await db.select().from(cosiriSiteProfiles)
+      .where(eq(cosiriSiteProfiles.assessmentId, assessmentId));
+
+    if (!profile) return res.status(404).json({ error: "No profile found" });
+    return res.json(profile);
+  } catch (err) {
+    console.error("getSiteProfile error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/cosiri/assessments/:id/profile", async (req, res) => {
+  try {
+    const assessmentId = parseInt(req.params.id);
+    if (isNaN(assessmentId)) return res.status(400).json({ error: "Invalid id" });
+
+    const {
+      siteName, location, subSector, employeeCount, productionArea,
+      productsManufactured, assessorName, assessorCredentials, cosiriVersion, assessmentDate,
+    } = req.body;
+
+    const [existing] = await db.select().from(cosiriSiteProfiles)
+      .where(eq(cosiriSiteProfiles.assessmentId, assessmentId));
+
+    if (existing) {
+      const [updated] = await db.update(cosiriSiteProfiles)
+        .set({ siteName, location, subSector, employeeCount, productionArea, productsManufactured, assessorName, assessorCredentials, cosiriVersion, assessmentDate, updatedAt: new Date() })
+        .where(eq(cosiriSiteProfiles.assessmentId, assessmentId))
+        .returning();
+      return res.json(updated);
+    }
+
+    const [created] = await db.insert(cosiriSiteProfiles).values({
+      assessmentId, siteName, location, subSector, employeeCount, productionArea,
+      productsManufactured, assessorName, assessorCredentials, cosiriVersion, assessmentDate,
+    }).returning();
+
+    return res.status(201).json(created);
+  } catch (err) {
+    console.error("saveSiteProfile error:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 });

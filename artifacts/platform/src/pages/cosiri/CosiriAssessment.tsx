@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
-import { CheckCircle2, Save, Activity, Info, TrendingUp } from "lucide-react";
+import { CheckCircle2, Save, Activity, Info, TrendingUp, Building2, ChevronDown, ChevronUp } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { COSIRI_DATA, BUILDING_BLOCKS, BAND_DESCRIPTIONS } from "@/lib/cosiri-data";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -37,6 +37,19 @@ const SCORE_RING: Record<number, string> = {
   5: "ring-green-400",
 };
 
+interface SiteProfile {
+  siteName?: string;
+  location?: string;
+  subSector?: string;
+  employeeCount?: string;
+  productionArea?: string;
+  productsManufactured?: string;
+  assessorName?: string;
+  assessorCredentials?: string;
+  cosiriVersion?: string;
+  assessmentDate?: string;
+}
+
 export default function CosiriAssessment() {
   const [, setLocation] = useLocation();
   const { company } = useCompany();
@@ -44,6 +57,13 @@ export default function CosiriAssessment() {
   const [activeBlock, setActiveBlock] = useState<string>(BUILDING_BLOCKS[0]);
   const [draftId, setDraftId] = useState<number | null>(null);
   const [draftCreating, setDraftCreating] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(true);
+  const [profile, setProfile] = useState<SiteProfile>({
+    cosiriVersion: "COSIRI-24",
+    assessmentDate: new Date().toISOString().split("T")[0],
+  });
+  const [profileSaveStatus, setProfileSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const saveProfileTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { mutateAsync: createAssessment, isPending: isCreating } = useCreateCosiriAssessment();
   const { mutateAsync: saveAnswers, isPending: isSaving } = useSaveCosiriAnswers();
@@ -86,6 +106,26 @@ export default function CosiriAssessment() {
     return scored.reduce((sum, d) => sum + answers[d.id], 0) / scored.length;
   };
 
+  const handleProfileChange = (field: keyof SiteProfile, value: string) => {
+    setProfile(prev => ({ ...prev, [field]: value }));
+    if (!draftId) return;
+    if (saveProfileTimer.current) clearTimeout(saveProfileTimer.current);
+    saveProfileTimer.current = setTimeout(async () => {
+      setProfileSaveStatus("saving");
+      try {
+        await fetch(`${BASE}/api/cosiri/assessments/${draftId}/profile`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...profile, [field]: value }),
+        });
+        setProfileSaveStatus("saved");
+        setTimeout(() => setProfileSaveStatus("idle"), 2500);
+      } catch {
+        setProfileSaveStatus("idle");
+      }
+    }, 800);
+  };
+
   const handleSubmit = async () => {
     if (!company || !draftId) return;
     try {
@@ -114,6 +154,140 @@ export default function CosiriAssessment() {
 
   return (
     <AppLayout>
+      {/* Company & Site Profile */}
+      <div className="mb-6 bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+        <button
+          onClick={() => setProfileOpen(v => !v)}
+          className="w-full flex items-center justify-between px-6 py-4 hover:bg-muted/30 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <Building2 className="w-5 h-5 text-primary" />
+            <div className="text-left">
+              <p className="font-semibold text-sm">Company & Site Profile</p>
+              <p className="text-xs text-muted-foreground">Assessor details and site information for the report</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {profileSaveStatus === "saving" && (
+              <span className="text-xs text-muted-foreground animate-pulse">Saving…</span>
+            )}
+            {profileSaveStatus === "saved" && (
+              <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Saved
+              </span>
+            )}
+            {profileOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          </div>
+        </button>
+
+        {profileOpen && (
+          <div className="px-6 pb-6 border-t border-border bg-muted/10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-5">
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 block">Site Name</label>
+                <input
+                  type="text"
+                  value={profile.siteName ?? ""}
+                  onChange={e => handleProfileChange("siteName", e.target.value)}
+                  placeholder="e.g. Manchester Plant 1"
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none text-sm transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 block">Location</label>
+                <input
+                  type="text"
+                  value={profile.location ?? ""}
+                  onChange={e => handleProfileChange("location", e.target.value)}
+                  placeholder="e.g. Manchester, UK"
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none text-sm transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 block">Industry Sub-Sector</label>
+                <input
+                  type="text"
+                  value={profile.subSector ?? ""}
+                  onChange={e => handleProfileChange("subSector", e.target.value)}
+                  placeholder="e.g. Food & Beverage Manufacturing"
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none text-sm transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 block">Employees (site)</label>
+                <input
+                  type="text"
+                  value={profile.employeeCount ?? ""}
+                  onChange={e => handleProfileChange("employeeCount", e.target.value)}
+                  placeholder="e.g. 250"
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none text-sm transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 block">Production Area (m²)</label>
+                <input
+                  type="text"
+                  value={profile.productionArea ?? ""}
+                  onChange={e => handleProfileChange("productionArea", e.target.value)}
+                  placeholder="e.g. 12,000 m²"
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none text-sm transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 block">Assessment Version</label>
+                <select
+                  value={profile.cosiriVersion ?? "COSIRI-24"}
+                  onChange={e => handleProfileChange("cosiriVersion", e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none text-sm transition-all"
+                >
+                  <option value="COSIRI-24">COSIRI-24 (24 Dimensions)</option>
+                  <option value="COSIRI-10">COSIRI-10 (10 Dimensions)</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 block">Products Manufactured</label>
+                <input
+                  type="text"
+                  value={profile.productsManufactured ?? ""}
+                  onChange={e => handleProfileChange("productsManufactured", e.target.value)}
+                  placeholder="e.g. Ready meals, frozen foods, dairy products"
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none text-sm transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 block">Assessment Date</label>
+                <input
+                  type="date"
+                  value={profile.assessmentDate ?? ""}
+                  onChange={e => handleProfileChange("assessmentDate", e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none text-sm transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 block">Certified COSIRI Assessor (CCA)</label>
+                <input
+                  type="text"
+                  value={profile.assessorName ?? ""}
+                  onChange={e => handleProfileChange("assessorName", e.target.value)}
+                  placeholder="e.g. Dr. Jane Smith"
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none text-sm transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 block">Assessor Credentials</label>
+                <input
+                  type="text"
+                  value={profile.assessorCredentials ?? ""}
+                  onChange={e => handleProfileChange("assessorCredentials", e.target.value)}
+                  placeholder="e.g. CCA Level 3, MBA"
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none text-sm transition-all"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="mb-8 flex items-end justify-between">
         <div>
           <h1 className="text-3xl font-display font-bold mb-2">Run Assessment</h1>

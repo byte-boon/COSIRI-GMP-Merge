@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRoute, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
-import { ChevronLeft, Sparkles, RefreshCw, FileText, CheckCircle2, Clock, Paperclip } from "lucide-react";
+import { ChevronLeft, Sparkles, RefreshCw, FileText, CheckCircle2, Clock, Paperclip, Building2, MapPin, Users, Package, Star, User, Calendar } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useGenerateCosiriInsight, useGetLatestCosiriInsights } from "@workspace/api-client-react";
-import { COSIRI_DATA } from "@/lib/cosiri-data";
+import { useGenerateCosiriInsight, useGetLatestCosiriInsights, useGetCosiriAssessment } from "@workspace/api-client-react";
+import { COSIRI_DATA, MATURITY_LABELS } from "@/lib/cosiri-data";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -15,6 +15,46 @@ interface EvidenceItem {
   fileName: string;
   aiSummary: string | null;
   summaryStatus: string;
+}
+
+interface SiteProfile {
+  siteName?: string | null;
+  location?: string | null;
+  subSector?: string | null;
+  employeeCount?: string | null;
+  productionArea?: string | null;
+  productsManufactured?: string | null;
+  assessorName?: string | null;
+  assessorCredentials?: string | null;
+  cosiriVersion?: string | null;
+  assessmentDate?: string | null;
+}
+
+function ProfileField({ icon, label, value }: { icon: React.ReactNode; label: string; value?: string | null }) {
+  return (
+    <div>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5 flex items-center gap-1">
+        <span className="text-muted-foreground/60">{icon}</span>
+        {label}
+      </p>
+      <p className="text-sm font-medium text-foreground">{value || <span className="text-muted-foreground/40 italic">Not provided</span>}</p>
+    </div>
+  );
+}
+
+function StarRating({ score }: { score: number }) {
+  const stars = Math.round(score);
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map(i => (
+        <Star
+          key={i}
+          className={`w-5 h-5 ${i <= stars ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}`}
+        />
+      ))}
+      <span className="ml-2 text-sm font-semibold text-muted-foreground">{stars}/5</span>
+    </div>
+  );
 }
 
 type InsightType = "executive_summary" | "gap_analysis" | "roadmap";
@@ -37,6 +77,17 @@ export default function CosiriReport() {
     query: { enabled: !!id },
   });
   const { mutateAsync: generateInsight, isPending } = useGenerateCosiriInsight();
+  const { data: assessment } = useGetCosiriAssessment(id, { query: { enabled: !!id } });
+
+  const { data: siteProfile } = useQuery<SiteProfile>({
+    queryKey: ["site-profile", id],
+    queryFn: async () => {
+      const res = await fetch(`${BASE}/api/cosiri/assessments/${id}/profile`);
+      if (!res.ok) return {} as SiteProfile;
+      return res.json();
+    },
+    enabled: !!id,
+  });
 
   const { data: allEvidence = [] } = useQuery<EvidenceItem[]>({
     queryKey: ["all-evidence", id],
@@ -132,6 +183,46 @@ export default function CosiriReport() {
               {currentContent ? "Regenerate" : "Generate"}
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Company & Site Profile Card */}
+      <div className="mb-6 bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-border bg-muted/20 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Building2 className="w-5 h-5 text-primary" />
+            <h2 className="font-bold text-base">1. Company & Site Profile</h2>
+          </div>
+          {assessment && (
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">COSIRI Star Rating</span>
+              <StarRating score={assessment.overallScore} />
+              <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+                {MATURITY_LABELS[assessment.overallScore] ?? "—"}
+              </span>
+            </div>
+          )}
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-4">
+            <ProfileField icon={<Building2 className="w-4 h-4" />} label="Company" value={assessment?.companyName} />
+            <ProfileField icon={<Building2 className="w-4 h-4" />} label="Site Name" value={siteProfile?.siteName} />
+            <ProfileField icon={<MapPin className="w-4 h-4" />} label="Location" value={siteProfile?.location} />
+            <ProfileField icon={<Package className="w-4 h-4" />} label="Industry" value={assessment?.industry} />
+            <ProfileField icon={<Package className="w-4 h-4" />} label="Sub-Sector" value={siteProfile?.subSector} />
+            <ProfileField icon={<Users className="w-4 h-4" />} label="Employees (site)" value={siteProfile?.employeeCount} />
+            <ProfileField icon={<Building2 className="w-4 h-4" />} label="Production Area" value={siteProfile?.productionArea ? `${siteProfile.productionArea} m²` : undefined} />
+            <ProfileField icon={<Package className="w-4 h-4" />} label="Products" value={siteProfile?.productsManufactured} />
+            <ProfileField icon={<Calendar className="w-4 h-4" />} label="Assessment Date" value={siteProfile?.assessmentDate} />
+            <ProfileField icon={<Building2 className="w-4 h-4" />} label="COSIRI Version" value={siteProfile?.cosiriVersion ?? "COSIRI-24"} />
+            <ProfileField icon={<User className="w-4 h-4" />} label="Certified Assessor (CCA)" value={siteProfile?.assessorName} />
+            <ProfileField icon={<User className="w-4 h-4" />} label="Assessor Credentials" value={siteProfile?.assessorCredentials} />
+          </div>
+          {!siteProfile?.siteName && (
+            <p className="mt-4 text-xs text-muted-foreground italic">
+              Complete the Company & Site Profile in the assessment to populate these fields.
+            </p>
+          )}
         </div>
       </div>
 

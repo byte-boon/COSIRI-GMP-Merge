@@ -1,3 +1,12 @@
+export const MATURITY_LABELS: Record<number, string> = {
+  0: "None",
+  1: "Beginner",
+  2: "Intermediate",
+  3: "Advanced",
+  4: "Leader",
+  5: "Industry Leader",
+};
+
 export const BAND_DESCRIPTIONS: Record<number, {
   title: string;
   summary: string;

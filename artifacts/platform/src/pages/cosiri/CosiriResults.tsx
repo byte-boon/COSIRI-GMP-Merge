@@ -1,9 +1,9 @@
 import { useRoute } from "wouter";
 import { Link } from "wouter";
-import { Activity, Download, ChevronLeft, Bot, Map } from "lucide-react";
+import { Activity, Download, ChevronLeft, Bot, Map, Star } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { CosiriRadar } from "@/components/CosiriRadar";
-import { COSIRI_DATA, BAND_DESCRIPTIONS } from "@/lib/cosiri-data";
+import { COSIRI_DATA, BAND_DESCRIPTIONS, MATURITY_LABELS } from "@/lib/cosiri-data";
 import { useGetCosiriAssessment } from "@workspace/api-client-react";
 import {
   Tooltip,
@@ -50,12 +50,17 @@ export default function CosiriResults() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-display font-bold">Assessment Results</h1>
-            <p className="text-muted-foreground mt-1">
-              Overall Band Score:{" "}
-              <strong className="text-foreground text-lg ml-1">{assessment.overallScore}</strong>
-              {" — "}
-              <span className="text-sm">{BAND_DESCRIPTIONS[Math.round(assessment.overallScore)]?.title ?? ""}</span>
-            </p>
+            <div className="flex items-center gap-4 mt-2">
+              <div className="flex items-center gap-1.5">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <Star key={i} className={`w-5 h-5 ${i <= assessment.overallScore ? "fill-amber-400 text-amber-400" : "text-muted-foreground/25"}`} />
+                ))}
+              </div>
+              <span className="text-sm font-semibold text-muted-foreground">Band {assessment.overallScore} — {MATURITY_LABELS[assessment.overallScore] ?? ""}</span>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+                {BAND_DESCRIPTIONS[Math.round(assessment.overallScore)]?.title ?? ""}
+              </span>
+            </div>
           </div>
           <div className="flex gap-3 flex-wrap">
             <Link href={`/cosiri/roadmap/${id}`} className="px-4 py-2 bg-card border border-border shadow-sm rounded-lg font-medium text-foreground hover:bg-muted transition-colors flex items-center gap-2">
@@ -123,8 +128,17 @@ export default function CosiriResults() {
               <tbody className="divide-y divide-border">
                 {radarData.map(item => (
                   <tr key={item.subject} className="hover:bg-muted/30 transition-colors">
-                    <td className="py-3 px-6 font-medium max-w-[200px] truncate" title={item.subject}>{item.subject}</td>
-                    <td className="py-3 px-6 text-right">
+                    <td className="py-3 px-6 font-medium max-w-[160px] truncate" title={item.subject}>{item.subject}</td>
+                    <td className="py-2 px-3">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                        item.score >= 4 ? "bg-green-50 text-green-700 border border-green-200" :
+                        item.score >= 2 ? "bg-blue-50 text-blue-700 border border-blue-200" :
+                        "bg-slate-100 text-slate-500 border border-slate-200"
+                      }`}>
+                        {MATURITY_LABELS[item.score] ?? "—"}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
                       <Tooltip delayDuration={150}>
                         <TooltipTrigger asChild>
                           <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold cursor-help ${getBadgeClass(item.score)}`}>
