@@ -41,6 +41,22 @@ const DIMENSION_META: Record<string, { name: string; block: string }> = {
 
 // ---- COSIRI Assessments ----
 
+router.get("/cosiri/assessments", async (req, res) => {
+  try {
+    const companyId = req.query.companyId ? parseInt(req.query.companyId as string) : undefined;
+    let rows;
+    if (companyId && !isNaN(companyId)) {
+      rows = await db.select().from(cosiriAssessments).where(eq(cosiriAssessments.companyId, companyId));
+    } else {
+      rows = await db.select().from(cosiriAssessments);
+    }
+    return res.json(rows);
+  } catch (err) {
+    console.error("listCosiriAssessments error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.post("/cosiri/assessments", async (req, res) => {
   try {
     const { companyId, companyName, industry, status = "draft", overallScore = 0 } = req.body;

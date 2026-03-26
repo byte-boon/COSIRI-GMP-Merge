@@ -2,14 +2,13 @@ import { Link, useLocation } from "wouter";
 import { 
   LayoutDashboard, 
   ClipboardCheck, 
-  BarChart2, 
   ShieldCheck, 
-  Settings,
   LogOut,
   Building,
   Activity,
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -54,7 +53,7 @@ export function Sidebar() {
         {/* COSIRI Module */}
         {showCosiri && (
           <div>
-            <p className="px-3 text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-widest mb-3">COSIRI Module</p>
+            <p className="px-3 text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-widest mb-3">COSIRI</p>
             <div className="space-y-1">
               <Link href="/cosiri" className={cn(
                 "flex items-center px-3 py-2 rounded-lg text-sm transition-all group",
@@ -66,7 +65,13 @@ export function Sidebar() {
                 "flex items-center px-3 py-2 rounded-lg text-sm transition-all group",
                 location === "/cosiri/assessment" ? "bg-sidebar-accent text-sidebar-foreground font-medium" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
               )}>
-                <ClipboardCheck className="w-4 h-4 mr-3 opacity-70" /> Run Assessment
+                <ClipboardCheck className="w-4 h-4 mr-3 opacity-70" /> Assessment
+              </Link>
+              <Link href="/cosiri/reports" className={cn(
+                "flex items-center px-3 py-2 rounded-lg text-sm transition-all group",
+                location.startsWith("/cosiri/report") ? "bg-sidebar-accent text-sidebar-foreground font-medium" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
+              )}>
+                <FileText className="w-4 h-4 mr-3 opacity-70" /> Reports
               </Link>
             </div>
           </div>
@@ -75,7 +80,7 @@ export function Sidebar() {
         {/* GMP Module */}
         {showGmp && (
           <div>
-            <p className="px-3 text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-widest mb-3">GMP Module</p>
+            <p className="px-3 text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-widest mb-3">GMP</p>
             <div className="space-y-1">
               <Link href="/gmp" className={cn(
                 "flex items-center px-3 py-2 rounded-lg text-sm transition-all group",
@@ -94,6 +99,12 @@ export function Sidebar() {
                 location === "/gmp/findings" ? "bg-sidebar-accent text-sidebar-foreground font-medium" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
               )}>
                 <AlertTriangle className="w-4 h-4 mr-3 opacity-70" /> Findings & CAPA
+              </Link>
+              <Link href="/gmp/reports" className={cn(
+                "flex items-center px-3 py-2 rounded-lg text-sm transition-all group",
+                location === "/gmp/reports" ? "bg-sidebar-accent text-sidebar-foreground font-medium" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
+              )}>
+                <BarChart3 className="w-4 h-4 mr-3 opacity-70" /> Reports
               </Link>
             </div>
           </div>
