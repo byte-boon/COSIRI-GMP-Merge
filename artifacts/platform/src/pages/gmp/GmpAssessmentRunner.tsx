@@ -3,12 +3,13 @@ import { useRoute, Link } from "wouter";
 import {
   ChevronLeft, Save, CheckCircle, CheckCircle2, AlertCircle, MinusCircle,
   Paperclip, Upload, X, FileText, Info, ChevronDown, ChevronUp,
-  Loader2, DownloadCloud
+  Loader2, DownloadCloud, ShieldAlert, Plus
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { GMP_SECTIONS, calculateGmpScore, type GmpResponse, type GmpAttachment } from "@/lib/gmp-data";
 import { useGetGmpAssessment, useSaveGmpResponses } from "@workspace/api-client-react";
 import { useCompany } from "@/contexts/CompanyContext";
+import RaiseCapaModal, { scoreRequiresCapa, scoreToSeverity } from "@/components/RaiseCapaModal";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -178,6 +179,7 @@ export default function GmpAssessmentRunner() {
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
   const [hoveredScore, setHoveredScore] = useState<{ itemId: string; score: number } | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [capaModal, setCapaModal] = useState<{ itemId: string; itemLabel: string; score: number } | null>(null);
 
   // Migrate / load existing responses
   useEffect(() => {
@@ -478,6 +480,33 @@ export default function GmpAssessmentRunner() {
                         <span>Hover a score to see requirements</span>
                       </div>
                     </div>
+
+                    {/* ── CAPA Rule Banner ── */}
+                    {!currentNa && currentScore !== null && scoreRequiresCapa(currentScore) && (() => {
+                      const sev = scoreToSeverity(currentScore);
+                      const bannerCfg = {
+                        critical: { bg: "bg-red-50",    border: "border-red-300",    text: "text-red-700",    btnBg: "bg-red-600 hover:bg-red-700",    label: "Critical — CAPA Required",   sub: "Score 1: Immediate corrective action must be logged." },
+                        major:    { bg: "bg-orange-50", border: "border-orange-300", text: "text-orange-700", btnBg: "bg-orange-600 hover:bg-orange-700", label: "Major — CAPA Recommended", sub: "Score 2: A corrective action plan must be established." },
+                      }[sev as "critical" | "major"];
+                      if (!bannerCfg) return null;
+                      return (
+                        <div className={`mt-3 flex items-center justify-between rounded-xl border px-4 py-3 ${bannerCfg.bg} ${bannerCfg.border}`}>
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <ShieldAlert className={`w-4 h-4 shrink-0 ${bannerCfg.text}`} />
+                            <div className="min-w-0">
+                              <p className={`text-xs font-bold ${bannerCfg.text}`}>{bannerCfg.label}</p>
+                              <p className={`text-[10px] ${bannerCfg.text} opacity-75`}>{bannerCfg.sub}</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => setCapaModal({ itemId: item.id, itemLabel: item.label, score: currentScore })}
+                            className={`shrink-0 ml-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white text-xs font-semibold transition-colors ${bannerCfg.btnBg}`}
+                          >
+                            <Plus className="w-3 h-3" /> Raise Finding
+                          </button>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Evidence & notes footer */}
@@ -571,6 +600,17 @@ export default function GmpAssessmentRunner() {
           </div>
         </div>
       </div>
+
+      {/* CAPA Modal */}
+      {capaModal && (
+        <RaiseCapaModal
+          assessmentId={id}
+          itemId={capaModal.itemId}
+          itemLabel={capaModal.itemLabel}
+          score={capaModal.score}
+          onClose={() => setCapaModal(null)}
+        />
+      )}
     </AppLayout>
   );
 }

@@ -1,11 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import QRCode from "react-qr-code";
 import { useRoute, Link } from "wouter";
 import {
   ChevronLeft, Download, ShieldCheck, Building2, MapPin, Calendar,
   User, Package, BarChart3, Target, AlertTriangle, CheckCircle2,
   FileText, Paperclip, Star, TrendingUp, TrendingDown, MinusCircle,
-  AlertCircle, XCircle,
+  AlertCircle, XCircle, Plus, ShieldAlert,
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useGetGmpAssessment, useListGmpFindings } from "@workspace/api-client-react";
@@ -13,6 +13,7 @@ import { useCompany } from "@/contexts/CompanyContext";
 import {
   GMP_SECTIONS, calculateGmpScore, type GmpResponse, type GmpAttachment,
 } from "@/lib/gmp-data";
+import RaiseCapaModal, { scoreRequiresCapa, scoreToSeverity } from "@/components/RaiseCapaModal";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -100,6 +101,7 @@ export default function GmpReport() {
 
   const { data: assessment, isLoading } = useGetGmpAssessment(id, { query: { enabled: !!id } });
   const { data: allFindings } = useListGmpFindings();
+  const [capaModal, setCapaModal] = useState<{ itemId: string; itemLabel: string; score: number } | null>(null);
 
   const findings = useMemo(() => (allFindings ?? []).filter(f => f.assessmentId === id), [allFindings, id]);
   const responses = useMemo(() => parseResponses((assessment?.responses ?? {}) as Record<string, unknown>), [assessment]);
@@ -338,11 +340,20 @@ export default function GmpReport() {
                           <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${response!.score === 1 ? "bg-red-500 text-white" : "bg-orange-200 text-orange-800"}`}>
                             {response!.score}
                           </span>
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <p className="text-xs font-semibold text-foreground truncate">{item.label}</p>
                             <p className="text-[10px] text-muted-foreground">{item.id} · {section.title}</p>
                           </div>
-                          <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0 ml-auto" />
+                          <button
+                            onClick={() => setCapaModal({ itemId: item.id, itemLabel: item.label, score: response!.score! })}
+                            className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors ${
+                              response!.score === 1
+                                ? "bg-red-600 hover:bg-red-700 text-white"
+                                : "bg-orange-500 hover:bg-orange-600 text-white"
+                            }`}
+                          >
+                            <Plus className="w-2.5 h-2.5" /> CAPA
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -363,6 +374,7 @@ export default function GmpReport() {
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground hidden md:table-cell">Area</th>
                     <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground w-20">Score</th>
                     <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground w-16 hidden lg:table-cell">Docs</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground w-24">CAPA</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -403,6 +415,19 @@ export default function GmpReport() {
                                 <Paperclip className="w-3 h-3" />{docs}
                               </span>
                             : <span className="text-muted-foreground/30 text-xs">—</span>
+                          }
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {!na && score !== null && scoreRequiresCapa(score)
+                            ? <button
+                                onClick={() => setCapaModal({ itemId: item.id, itemLabel: item.label, score })}
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold text-white transition-colors ${
+                                  score === 1 ? "bg-red-600 hover:bg-red-700" : "bg-orange-500 hover:bg-orange-600"
+                                }`}
+                              >
+                                <ShieldAlert className="w-2.5 h-2.5" /> Raise
+                              </button>
+                            : <span className="text-muted-foreground/25 text-xs">—</span>
                           }
                         </td>
                       </tr>
@@ -623,6 +648,17 @@ export default function GmpReport() {
         <span>GMP Audit Report · {assessment.auditId}</span>
         <span>Generated by Nexus Platform · {new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</span>
       </div>
+
+      {/* CAPA Modal */}
+      {capaModal && (
+        <RaiseCapaModal
+          assessmentId={id}
+          itemId={capaModal.itemId}
+          itemLabel={capaModal.itemLabel}
+          score={capaModal.score}
+          onClose={() => setCapaModal(null)}
+        />
+      )}
     </AppLayout>
   );
 }
