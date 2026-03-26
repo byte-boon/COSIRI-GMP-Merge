@@ -299,7 +299,7 @@ export default function CosiriReport() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-5">
               <span className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-bold uppercase tracking-widest">
-                COSIRI Assessment Report
+                Corporate Sustainability Industry Readiness Index (COSIRI) — Assessment Report
               </span>
               <span className="px-2.5 py-1 rounded-full bg-white/10 text-white/50 text-xs font-mono">
                 {siteProfile?.cosiriVersion ?? "COSIRI-24"}
