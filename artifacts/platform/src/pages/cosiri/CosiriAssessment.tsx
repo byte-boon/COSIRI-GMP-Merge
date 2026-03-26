@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { CheckCircle2, Save, Activity, Info } from "lucide-react";
+import { CheckCircle2, Save, Activity, Info, TrendingUp } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { COSIRI_DATA, BUILDING_BLOCKS, BAND_DESCRIPTIONS } from "@/lib/cosiri-data";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -17,6 +17,24 @@ const BAND_COLORS: Record<number, string> = {
   3: "text-amber-500",
   4: "text-blue-500",
   5: "text-green-500",
+};
+
+const SCORE_BADGE: Record<number, string> = {
+  0: "bg-slate-100 text-slate-600 border-slate-200",
+  1: "bg-red-50 text-red-700 border-red-200",
+  2: "bg-orange-50 text-orange-700 border-orange-200",
+  3: "bg-amber-50 text-amber-700 border-amber-200",
+  4: "bg-blue-50 text-blue-700 border-blue-200",
+  5: "bg-green-50 text-green-700 border-green-200",
+};
+
+const SCORE_RING: Record<number, string> = {
+  0: "ring-slate-300",
+  1: "ring-red-300",
+  2: "ring-orange-300",
+  3: "ring-amber-400",
+  4: "ring-blue-400",
+  5: "ring-green-400",
 };
 
 export default function CosiriAssessment() {
@@ -57,6 +75,17 @@ export default function CosiriAssessment() {
   const totalAnswered = Object.keys(answers).length;
   const progress = Math.round((totalAnswered / COSIRI_DATA.length) * 100);
 
+  const liveScore = totalAnswered > 0
+    ? Object.values(answers).reduce((a, b) => a + b, 0) / totalAnswered
+    : null;
+
+  const blockAvg = (block: string) => {
+    const dims = COSIRI_DATA.filter(d => d.block === block);
+    const scored = dims.filter(d => answers[d.id] !== undefined);
+    if (scored.length === 0) return null;
+    return scored.reduce((sum, d) => sum + answers[d.id], 0) / scored.length;
+  };
+
   const handleSubmit = async () => {
     if (!company || !draftId) return;
     try {
@@ -92,10 +121,25 @@ export default function CosiriAssessment() {
             Select the maturity band for each dimension. Attach supporting evidence below each one.
           </p>
         </div>
-        <div className="flex flex-col items-end gap-1">
-          <span className="text-sm font-medium">{progress}% Complete</span>
-          <div className="w-48 h-2 bg-secondary rounded-full overflow-hidden">
-            <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
+        <div className="flex flex-col items-end gap-2">
+          {/* Live overall score */}
+          {liveScore !== null && (
+            <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2 shadow-sm">
+              <TrendingUp className="w-4 h-4 text-primary" />
+              <span className="text-sm text-muted-foreground">Live Score</span>
+              <span className={`text-2xl font-bold tabular-nums ${
+                liveScore >= 4 ? "text-green-600" : liveScore >= 2 ? "text-blue-600" : "text-amber-500"
+              }`}>
+                {liveScore.toFixed(1)}
+              </span>
+              <span className="text-xs text-muted-foreground">/5</span>
+            </div>
+          )}
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium">{progress}% Complete</span>
+            <div className="w-32 h-2 bg-secondary rounded-full overflow-hidden">
+              <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
+            </div>
           </div>
           {draftCreating && (
             <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -118,6 +162,7 @@ export default function CosiriAssessment() {
             const answeredInBlock = blockDims.filter(d => answers[d.id] !== undefined).length;
             const isComplete = answeredInBlock === blockDims.length;
             const isActive = activeBlock === block;
+            const avg = blockAvg(block);
 
             return (
               <button
@@ -126,10 +171,28 @@ export default function CosiriAssessment() {
                 className={`w-full text-left p-4 rounded-xl border transition-all flex flex-col gap-2 ${isActive ? "bg-card border-primary shadow-sm ring-1 ring-primary/20" : "bg-transparent border-transparent hover:bg-muted/50"}`}
               >
                 <div className="flex items-start justify-between w-full">
-                  <span className={`font-semibold text-sm ${isActive ? "text-primary" : "text-foreground"}`}>{block}</span>
-                  {isComplete && <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />}
+                  <span className={`font-semibold text-sm leading-snug ${isActive ? "text-primary" : "text-foreground"}`}>{block}</span>
+                  {isComplete ? (
+                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+                  ) : avg !== null ? (
+                    <span className={`text-xs font-bold shrink-0 mt-0.5 ${
+                      avg >= 4 ? "text-green-600" : avg >= 2 ? "text-blue-600" : "text-amber-500"
+                    }`}>
+                      {avg.toFixed(1)}
+                    </span>
+                  ) : null}
                 </div>
-                <span className="text-xs text-muted-foreground font-mono">{answeredInBlock} / {blockDims.length} answered</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground font-mono">{answeredInBlock} / {blockDims.length} answered</span>
+                  {avg !== null && (
+                    <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${avg >= 4 ? "bg-green-500" : avg >= 2 ? "bg-blue-500" : "bg-amber-400"}`}
+                        style={{ width: `${(avg / 5) * 100}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
               </button>
             );
           })}
@@ -137,12 +200,50 @@ export default function CosiriAssessment() {
 
         {/* Content Area */}
         <div className="flex-1 space-y-8">
-          {dimensionsInBlock.map(dim => (
-            <div key={dim.id} className="bg-card rounded-2xl border border-border shadow-sm p-6">
+          {dimensionsInBlock.map(dim => {
+            const selectedScore = answers[dim.id];
+            const isAnswered = selectedScore !== undefined;
+            const selectedOpt = dim.options.find(o => o.score === selectedScore);
+
+            return (
+            <div
+              key={dim.id}
+              className={`bg-card rounded-2xl border shadow-sm p-6 transition-all ${
+                isAnswered
+                  ? `border-border ring-2 ${SCORE_RING[selectedScore]}`
+                  : "border-border"
+              }`}
+            >
               <div className="mb-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">{dim.pillar}</span>
-                  <span className="text-xs font-mono text-muted-foreground">{dim.id}</span>
+                <div className="flex items-start justify-between gap-4 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">{dim.pillar}</span>
+                    <span className="text-xs font-mono text-muted-foreground">{dim.id}</span>
+                  </div>
+
+                  {/* Score badge — shown immediately when answer is selected */}
+                  {isAnswered && (
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-sm font-semibold transition-all ${SCORE_BADGE[selectedScore]}`}>
+                      <span className="text-lg font-bold tabular-nums">{selectedScore}</span>
+                      <div className="flex flex-col leading-none">
+                        <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">Score</span>
+                        <span className="text-xs font-medium">{selectedOpt?.label}</span>
+                      </div>
+                      {/* Mini score bar */}
+                      <div className="flex gap-0.5 ml-1">
+                        {[0,1,2,3,4].map(i => (
+                          <div
+                            key={i}
+                            className={`w-1.5 h-4 rounded-sm transition-all ${
+                              i < selectedScore
+                                ? selectedScore >= 4 ? "bg-green-500" : selectedScore >= 2 ? "bg-blue-500" : "bg-amber-400"
+                                : "bg-current opacity-20"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <h3 className="text-xl font-bold">{dim.name}</h3>
                 <p className="text-muted-foreground mt-1">{dim.question}</p>
@@ -219,7 +320,8 @@ export default function CosiriAssessment() {
                 </div>
               )}
             </div>
-          ))}
+          ); })}
+
 
           <div className="pt-6 border-t border-border flex justify-end">
             <button
