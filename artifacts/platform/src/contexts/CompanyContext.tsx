@@ -13,6 +13,7 @@ type CompanyContextType = {
   company: Company | null;
   sessionToken: string | null;
   setAuth: (company: Company, token: string) => void;
+  updateModules: (modules: string) => void;
   isLoading: boolean;
   logout: () => void;
 };
@@ -47,6 +48,15 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("platform_session_token", token);
   };
 
+  const updateModules = (modules: string) => {
+    setCompanyState(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, modules };
+      localStorage.setItem("platform_company", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const logout = () => {
     setCompanyState(null);
     setSessionTokenState(null);
@@ -55,7 +65,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <CompanyContext.Provider value={{ company, sessionToken, setAuth, isLoading, logout }}>
+    <CompanyContext.Provider value={{ company, sessionToken, setAuth, updateModules, isLoading, logout }}>
       {children}
     </CompanyContext.Provider>
   );

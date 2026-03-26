@@ -20,6 +20,7 @@ import GmpAssessmentList from "@/pages/gmp/GmpAssessmentList";
 import GmpNewAssessment from "@/pages/gmp/GmpNewAssessment";
 import GmpAssessmentRunner from "@/pages/gmp/GmpAssessmentRunner";
 import GmpFindings from "@/pages/gmp/GmpFindings";
+import SelectModule from "@/pages/SelectModule";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +36,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Registration} />
       <Route path="/login" component={Login} />
+      <Route path="/select-module" component={SelectModule} />
       <Route path="/hub" component={Hub} />
 
       {/* COSIRI Routes */}

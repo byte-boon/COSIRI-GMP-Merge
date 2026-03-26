@@ -43,7 +43,10 @@ export default function Login() {
         return;
       }
       setAuth(body.company, body.sessionToken);
-      setLocation("/hub");
+      const destination = (!body.company.modules || body.company.modules === "not_selected")
+        ? "/select-module"
+        : "/hub";
+      setLocation(destination);
     } catch {
       setApiError("Network error. Please check your connection and try again.");
     } finally {

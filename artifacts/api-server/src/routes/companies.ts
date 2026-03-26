@@ -9,9 +9,9 @@ const router = Router();
 
 router.post("/companies", async (req, res) => {
   try {
-    const { name, industry, email, modules, password } = req.body;
-    if (!name || !industry || !modules) {
-      return res.status(400).json({ error: "name, industry, and modules are required" });
+    const { name, industry, email, password } = req.body;
+    if (!name || !industry) {
+      return res.status(400).json({ error: "name and industry are required" });
     }
     if (!password || password.length < 8) {
       return res.status(400).json({ error: "password must be at least 8 characters" });
@@ -29,13 +29,35 @@ router.post("/companies", async (req, res) => {
 
     const [company] = await db
       .insert(companies)
-      .values({ name, industry, email, modules, passwordHash, sessionToken })
+      .values({ name, industry, email, modules: "not_selected", passwordHash, sessionToken })
       .returning();
 
     const { passwordHash: _ph, sessionToken: _st, ...safeCompany } = company;
     return res.status(201).json({ company: safeCompany, sessionToken });
   } catch (err) {
     console.error("createCompany error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.patch("/companies/:id/modules", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+    const { modules } = req.body;
+    if (!["cosiri", "gmp", "both"].includes(modules)) {
+      return res.status(400).json({ error: "modules must be cosiri, gmp, or both" });
+    }
+    const [company] = await db
+      .update(companies)
+      .set({ modules })
+      .where(eq(companies.id, id))
+      .returning();
+    if (!company) return res.status(404).json({ error: "Company not found" });
+    const { passwordHash: _ph, sessionToken: _st, ...safeCompany } = company;
+    return res.json({ company: safeCompany });
+  } catch (err) {
+    console.error("updateModules error:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
