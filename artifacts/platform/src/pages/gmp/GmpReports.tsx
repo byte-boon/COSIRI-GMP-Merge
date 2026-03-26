@@ -141,7 +141,7 @@ export default function GmpReports() {
                     Report auto-saved · {auditFindings.length} finding{auditFindings.length !== 1 ? "s" : ""} total
                   </p>
                   <Link
-                    href={`/gmp/assessments/${audit.id}`}
+                    href={`/gmp/report/${audit.id}`}
                     className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:underline"
                   >
                     View Full Report <ChevronRight className="w-4 h-4" />

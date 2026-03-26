@@ -20,6 +20,7 @@ import GmpAssessmentList from "@/pages/gmp/GmpAssessmentList";
 import GmpNewAssessment from "@/pages/gmp/GmpNewAssessment";
 import GmpAssessmentRunner from "@/pages/gmp/GmpAssessmentRunner";
 import GmpFindings from "@/pages/gmp/GmpFindings";
+import GmpReport from "@/pages/gmp/GmpReport";
 import SelectModule from "@/pages/SelectModule";
 
 const queryClient = new QueryClient({
@@ -54,6 +55,7 @@ function Router() {
       <Route path="/gmp/assessments/:id" component={GmpAssessmentRunner} />
       <Route path="/gmp/findings" component={GmpFindings} />
       <Route path="/gmp/reports" component={GmpReports} />
+      <Route path="/gmp/report/:id" component={GmpReport} />
 
       <Route component={NotFound} />
     </Switch>
