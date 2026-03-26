@@ -321,50 +321,144 @@ export default function CosiriReport() {
       <div className={card}>
         <SectionHeader num={3} icon={<Star className="w-4 h-4" />} title="Overall Score & Star Rating" subtitle="Top-line result" />
         <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Stars */}
-            <div className="flex flex-col items-center justify-center text-center bg-gradient-to-b from-amber-50 to-white border border-amber-100 rounded-2xl p-6">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">COSIRI Star Rating</p>
-              <div className="flex gap-1 mb-3">
-                {[1, 2, 3, 4, 5].map(i => (
-                  <Star key={i} className={`w-9 h-9 ${i <= overallScore ? "fill-amber-400 text-amber-400" : "text-slate-200 fill-slate-100"}`} />
-                ))}
-              </div>
-              <p className="text-3xl font-bold text-foreground">{overallScore}<span className="text-lg text-muted-foreground">/5</span></p>
-              <p className="text-sm font-semibold text-amber-600 mt-1">{MATURITY_LABELS[overallScore] ?? "—"}</p>
-            </div>
-            {/* Maturity level */}
-            <div className="bg-muted/30 border border-border rounded-2xl p-6">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Maturity Band</p>
-              <p className="text-2xl font-bold text-foreground mb-1">Band {overallScore}</p>
-              <p className="text-base font-semibold text-primary mb-2">{BAND_DESCRIPTIONS[overallScore]?.title}</p>
-              <p className="text-xs text-muted-foreground leading-relaxed">{BAND_DESCRIPTIONS[overallScore]?.summary}</p>
-              <div className="mt-3 pt-3 border-t border-border">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Key Criteria</p>
-                <p className="text-xs text-foreground leading-relaxed">{BAND_DESCRIPTIONS[overallScore]?.criteria}</p>
-              </div>
-            </div>
-            {/* Score bar across dimensions */}
-            <div className="bg-muted/30 border border-border rounded-2xl p-6">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">Score Distribution (24 dimensions)</p>
-              <div className="space-y-2">
-                {[5, 4, 3, 2, 1, 0].map(band => {
-                  const count = COSIRI_DATA.filter(d => (scoreMap[d.id] ?? 0) === band).length;
-                  const pct = (count / 24) * 100;
-                  const clr = band >= 4 ? "bg-green-400" : band >= 2 ? "bg-blue-400" : "bg-slate-300";
-                  return (
-                    <div key={band} className="flex items-center gap-2 text-xs">
-                      <span className="w-12 text-muted-foreground font-medium">Band {band}</span>
-                      <div className="flex-1 bg-muted rounded-full h-2">
-                        <div className={`${clr} h-2 rounded-full transition-all`} style={{ width: `${pct}%` }} />
+          {/* BUG 1-5 FIX: overallScore is stored as Math.round(avg × 10), e.g. 31 for a 3.1 avg.
+              All Section 3 variables are scoped here — no other section is modified. */}
+          {(() => {
+            // BUG 1 — correct average: divide raw stored value by 10 → true 0–5 float
+            const s3Score = parseFloat((overallScore / 10).toFixed(1));
+
+            // BUG 3 — stars from corrected average (Math.round → 0–5 integer)
+            const s3Stars = Math.round(s3Score);
+
+            // BUG 2 — getMaturityBand: map corrected 0–5 float → band integer 0–5
+            const s3Band: number =
+              s3Score <= 0   ? 0 :
+              s3Score <= 1.0 ? 1 :
+              s3Score <= 2.0 ? 2 :
+              s3Score <= 3.0 ? 3 :
+              s3Score <= 4.0 ? 4 : 5;
+            const s3BandDesc = BAND_DESCRIPTIONS[s3Band];
+
+            // BUG 4 — Key Criteria: top 3 (strengths) and bottom 3 (gaps) from dimension answers
+            const s3AllScored = COSIRI_DATA
+              .map(d => ({ dim: d, score: scoreMap[d.id] ?? 0 }))
+              .filter(d => d.score > 0)
+              .sort((a, b) => b.score - a.score);
+            const s3Top3 = s3AllScored.slice(0, 3);
+            const s3Bot3 = [...s3AllScored].reverse().slice(0, 3);
+
+            // BUG 5 — band labels for distribution tooltip/legend
+            const bandLabel: Record<number, string> = {
+              5: "Leader", 4: "Advanced", 3: "Intermediate",
+              2: "Developing", 1: "Beginner", 0: "None",
+            };
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                {/* Card 1 — Star Rating (BUG 1 + BUG 3) */}
+                <div className="flex flex-col items-center justify-center text-center bg-gradient-to-b from-amber-50 to-white border border-amber-100 rounded-2xl p-6">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">COSIRI Star Rating</p>
+                  <div className="flex gap-1 mb-3">
+                    {[1, 2, 3, 4, 5].map(i => (
+                      <Star key={i} className={`w-9 h-9 ${i <= s3Stars ? "fill-amber-400 text-amber-400" : "text-slate-200 fill-slate-100"}`} />
+                    ))}
+                  </div>
+                  <p className="text-3xl font-bold text-foreground">
+                    {s3Score}<span className="text-lg text-muted-foreground">/5</span>
+                  </p>
+                  <p className="text-sm font-semibold text-amber-600 mt-1">
+                    {MATURITY_LABELS[s3Band] ?? "—"}
+                  </p>
+                </div>
+
+                {/* Card 2 — Maturity Band + Key Criteria (BUG 2 + BUG 4) */}
+                <div className="bg-muted/30 border border-border rounded-2xl p-6 flex flex-col">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Maturity Band</p>
+                  <p className="text-2xl font-bold text-foreground mb-0.5">
+                    Band {s3Band} — {s3BandDesc?.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground leading-relaxed mb-3">{s3BandDesc?.summary}</p>
+                  <div className="mt-auto pt-3 border-t border-border">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Key Criteria</p>
+                    {s3AllScored.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic">No dimension scores available yet.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {s3Top3.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-semibold text-green-600 uppercase tracking-wider mb-1.5">Strengths</p>
+                            <div className="space-y-1">
+                              {s3Top3.map(({ dim, score }) => (
+                                <p key={dim.id} className="text-xs text-foreground flex items-start gap-1.5 leading-snug">
+                                  <span className="shrink-0">✅</span>
+                                  <span>
+                                    <span className="font-medium">{dim.name}</span>
+                                    {" — "}{MATURITY_LABELS[score] ?? "—"} ({score}/5)
+                                  </span>
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {s3Bot3.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wider mb-1.5">Areas for Improvement</p>
+                            <div className="space-y-1">
+                              {s3Bot3.map(({ dim, score }) => (
+                                <p key={dim.id} className="text-xs text-foreground flex items-start gap-1.5 leading-snug">
+                                  <span className="shrink-0">⚠️</span>
+                                  <span>
+                                    <span className="font-medium">{dim.name}</span>
+                                    {" — "}{MATURITY_LABELS[score] ?? "—"} ({score}/5)
+                                  </span>
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <span className="w-6 text-right font-bold text-foreground">{count}</span>
-                    </div>
-                  );
-                })}
+                    )}
+                  </div>
+                </div>
+
+                {/* Card 3 — Score Distribution (BUG 5: band labels from corrected mapping) */}
+                <div className="bg-muted/30 border border-border rounded-2xl p-6">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">
+                    Score Distribution (24 dimensions)
+                  </p>
+                  <div className="space-y-2.5">
+                    {[5, 4, 3, 2, 1, 0].map(band => {
+                      // BUG 5: use exact integer band stored per dimension (0–5, stored correctly)
+                      const count = COSIRI_DATA.filter(d => (scoreMap[d.id] ?? 0) === band).length;
+                      const pct = (count / 24) * 100;
+                      const clr = band >= 4 ? "bg-green-400" : band >= 2 ? "bg-blue-400" : "bg-slate-300";
+                      return (
+                        <div
+                          key={band}
+                          className="flex items-center gap-2 text-xs"
+                          title={`Band ${band} — ${bandLabel[band]}: ${count} dimension${count !== 1 ? "s" : ""}`}
+                        >
+                          <span className="w-7 text-muted-foreground font-bold shrink-0">B{band}</span>
+                          <div className="flex-1 bg-muted rounded-full h-2">
+                            <div className={`${clr} h-2 rounded-full transition-all`} style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="w-5 text-right font-bold text-foreground">{count}</span>
+                          <span className="w-20 text-muted-foreground/60 text-[10px] hidden sm:block truncate">
+                            {bandLabel[band]}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-3 pt-3 border-t border-border">
+                    Hover each bar for full label · Bands mapped via getMaturityBand()
+                  </p>
+                </div>
+
               </div>
-            </div>
-          </div>
+            );
+          })()}
         </div>
       </div>
 
