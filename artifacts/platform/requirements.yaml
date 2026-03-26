@@ -1,0 +1,20 @@
+packages:
+  "framer-motion": "For smooth page transitions and micro-interactions"
+  "recharts": "For rendering the COSIRI radar chart and GMP compliance charts"
+  "react-markdown": "For rendering AI-generated insights securely"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility for merging tailwind classes without style conflicts"
+  "react-hook-form": "For robust form state management"
+  "@hookform/resolvers": "Zod resolver for form validation"
+  "lucide-react": "Beautiful consistent icon set"
+  "date-fns": "For date formatting in lists and reports"
+
+images:
+  - path: "artifacts/platform/public/images/auth-bg.png"
+    description: "Abstract modern corporate background, dark navy and teal geometric shapes, soft lighting, 3d minimal, professional"
+    aspect_ratio: "16:9"
+
+notes:
+  - Using wouter for routing. Link renders as <a>.
+  - API hooks are imported from @workspace/api-client-react.
+  - Context is used to persist chosen modules globally (simulated auth).

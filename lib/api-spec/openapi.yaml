@@ -1,22 +1,26 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Unified COSIRI & GMP Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: companies
+    description: Company registration and management
+  - name: cosiri
+    description: COSIRI sustainability assessment
+  - name: gmp
+    description: GMP compliance management
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +28,306 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /companies:
+    post:
+      operationId: createCompany
+      tags: [companies]
+      summary: Register a company
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCompanyInput"
+      responses:
+        "201":
+          description: Company created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Company"
+        "400":
+          description: Invalid input
+
+  /companies/{id}:
+    get:
+      operationId: getCompany
+      tags: [companies]
+      summary: Get a company by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Company found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Company"
+        "404":
+          description: Not found
+
+  /cosiri/assessments:
+    post:
+      operationId: createCosiriAssessment
+      tags: [cosiri]
+      summary: Create a COSIRI assessment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCosiriAssessmentInput"
+      responses:
+        "201":
+          description: Assessment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CosiriAssessment"
+
+  /cosiri/assessments/{id}:
+    get:
+      operationId: getCosiriAssessment
+      tags: [cosiri]
+      summary: Get a COSIRI assessment with answers
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Assessment with answers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CosiriAssessmentWithAnswers"
+        "404":
+          description: Not found
+
+  /cosiri/assessments/{id}/answers:
+    post:
+      operationId: saveCosiriAnswers
+      tags: [cosiri]
+      summary: Save answers for a COSIRI assessment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/CosiriAnswerInput"
+      responses:
+        "200":
+          description: Answers saved
+
+  /cosiri/assessments/{id}/ai/generate:
+    post:
+      operationId: generateCosiriInsight
+      tags: [cosiri]
+      summary: Generate AI insight for an assessment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateInsightInput"
+      responses:
+        "200":
+          description: AI insight generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiInsight"
+        "400":
+          description: Invalid input or no answers found
+        "404":
+          description: Assessment not found
+
+  /cosiri/assessments/{id}/ai/insights/latest:
+    get:
+      operationId: getLatestCosiriInsights
+      tags: [cosiri]
+      summary: Get latest AI insights for an assessment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Latest insights by type
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LatestInsights"
+
+  /cosiri/ai/insights/{id}:
+    put:
+      operationId: updateCosiriInsight
+      tags: [cosiri]
+      summary: Update an AI insight
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInsightInput"
+      responses:
+        "200":
+          description: Insight updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiInsight"
+        "404":
+          description: Not found
+
+  /gmp/assessments:
+    get:
+      operationId: listGmpAssessments
+      tags: [gmp]
+      summary: List all GMP assessments
+      parameters:
+        - name: companyId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of GMP assessments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GmpAssessment"
+    post:
+      operationId: createGmpAssessment
+      tags: [gmp]
+      summary: Create a new GMP assessment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGmpAssessmentInput"
+      responses:
+        "201":
+          description: Assessment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GmpAssessment"
+
+  /gmp/assessments/{id}:
+    get:
+      operationId: getGmpAssessment
+      tags: [gmp]
+      summary: Get a GMP assessment with responses
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: GMP assessment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GmpAssessment"
+        "404":
+          description: Not found
+
+  /gmp/assessments/{id}/responses:
+    put:
+      operationId: saveGmpResponses
+      tags: [gmp]
+      summary: Save responses for a GMP assessment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Responses saved
+
+  /gmp/findings:
+    get:
+      operationId: listGmpFindings
+      tags: [gmp]
+      summary: List GMP findings
+      parameters:
+        - name: assessmentId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of findings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GmpFinding"
+    post:
+      operationId: createGmpFinding
+      tags: [gmp]
+      summary: Create a GMP finding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGmpFindingInput"
+      responses:
+        "201":
+          description: Finding created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GmpFinding"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +338,273 @@ components:
       required:
         - status
 
+    Company:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        industry:
+          type: string
+        email:
+          type: string
+        modules:
+          type: string
+          description: "Comma-separated: cosiri, gmp, or both"
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - industry
+        - modules
+
+    CreateCompanyInput:
+      type: object
+      properties:
+        name:
+          type: string
+        industry:
+          type: string
+        email:
+          type: string
+        modules:
+          type: string
+          description: "cosiri, gmp, or both"
+      required:
+        - name
+        - industry
+        - modules
+
+    CosiriAssessment:
+      type: object
+      properties:
+        id:
+          type: integer
+        companyId:
+          type: integer
+        companyName:
+          type: string
+        industry:
+          type: string
+        status:
+          type: string
+        overallScore:
+          type: integer
+      required:
+        - id
+        - companyName
+        - industry
+        - status
+        - overallScore
+
+    CreateCosiriAssessmentInput:
+      type: object
+      properties:
+        companyId:
+          type: integer
+        companyName:
+          type: string
+        industry:
+          type: string
+        status:
+          type: string
+        overallScore:
+          type: integer
+      required:
+        - companyName
+        - industry
+
+    CosiriAnswer:
+      type: object
+      properties:
+        id:
+          type: integer
+        assessmentId:
+          type: integer
+        dimensionId:
+          type: string
+        score:
+          type: integer
+        notes:
+          type: string
+      required:
+        - id
+        - assessmentId
+        - dimensionId
+        - score
+
+    CosiriAnswerInput:
+      type: object
+      properties:
+        assessmentId:
+          type: integer
+        dimensionId:
+          type: string
+        score:
+          type: integer
+        notes:
+          type: string
+      required:
+        - assessmentId
+        - dimensionId
+        - score
+
+    CosiriAssessmentWithAnswers:
+      allOf:
+        - $ref: "#/components/schemas/CosiriAssessment"
+        - type: object
+          properties:
+            answers:
+              type: array
+              items:
+                $ref: "#/components/schemas/CosiriAnswer"
+
+    GenerateInsightInput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [executive_summary, gap_analysis, roadmap]
+      required:
+        - type
+
+    AiInsight:
+      type: object
+      properties:
+        id:
+          type: integer
+        assessmentId:
+          type: integer
+        type:
+          type: string
+        content:
+          type: string
+        status:
+          type: string
+        version:
+          type: integer
+        model:
+          type: string
+        tokensUsed:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - assessmentId
+        - type
+        - content
+        - status
+        - version
+
+    LatestInsights:
+      type: object
+      properties:
+        executive_summary:
+          $ref: "#/components/schemas/AiInsight"
+        gap_analysis:
+          $ref: "#/components/schemas/AiInsight"
+        roadmap:
+          $ref: "#/components/schemas/AiInsight"
+
+    UpdateInsightInput:
+      type: object
+      properties:
+        content:
+          type: string
+        status:
+          type: string
+      required:
+        - content
+
+    GmpAssessment:
+      type: object
+      properties:
+        id:
+          type: integer
+        companyId:
+          type: integer
+        auditId:
+          type: string
+        scope:
+          type: string
+        status:
+          type: string
+        overallScore:
+          type: integer
+        startDate:
+          type: string
+        responses:
+          type: object
+          additionalProperties: true
+      required:
+        - id
+        - scope
+        - status
+        - overallScore
+
+    CreateGmpAssessmentInput:
+      type: object
+      properties:
+        companyId:
+          type: integer
+        scope:
+          type: string
+        status:
+          type: string
+        overallScore:
+          type: integer
+        startDate:
+          type: string
+      required:
+        - scope
+
+    GmpFinding:
+      type: object
+      properties:
+        id:
+          type: integer
+        assessmentId:
+          type: integer
+        itemId:
+          type: string
+        type:
+          type: string
+        severity:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - assessmentId
+        - itemId
+        - severity
+        - description
+        - status
+
+    CreateGmpFindingInput:
+      type: object
+      properties:
+        assessmentId:
+          type: integer
+        itemId:
+          type: string
+        type:
+          type: string
+        severity:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+      required:
+        - assessmentId
+        - itemId
+        - severity
+        - description
