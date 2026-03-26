@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { cosiriAssessments, cosiriAnswers, cosiriAiInsights, cosiriUsageCounters } from "@workspace/db/schema";
+import { cosiriAssessments, cosiriAnswers, cosiriAiInsights, cosiriUsageCounters, cosiriEvidence } from "@workspace/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import OpenAI from "openai";
+import { ObjectStorageService } from "../lib/objectStorage.js";
 
 const router = Router();
 
@@ -285,6 +286,146 @@ router.put("/cosiri/ai/insights/:id", async (req, res) => {
   } catch (err) {
     console.error("updateCosiriInsight error:", err);
     return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// PUT update assessment (status, score, etc.)
+router.put("/cosiri/assessments/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { status, overallScore } = req.body;
+    const updates: Record<string, unknown> = { updatedAt: new Date() };
+    if (status !== undefined) updates.status = status;
+    if (overallScore !== undefined) updates.overallScore = overallScore;
+    const [updated] = await db.update(cosiriAssessments).set(updates).where(eq(cosiriAssessments.id, id)).returning();
+    if (!updated) return res.status(404).json({ error: "Assessment not found" });
+    return res.json(updated);
+  } catch (err) {
+    console.error("updateAssessment error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ---- COSIRI Evidence ----
+
+const storageService = new ObjectStorageService();
+
+// GET evidence for an assessment (optionally filtered by dimensionId)
+router.get("/cosiri/assessments/:id/evidence", async (req, res) => {
+  try {
+    const assessmentId = parseInt(req.params.id);
+    const { dimensionId } = req.query;
+    let rows;
+    if (dimensionId) {
+      rows = await db.select().from(cosiriEvidence)
+        .where(and(eq(cosiriEvidence.assessmentId, assessmentId), eq(cosiriEvidence.dimensionId, dimensionId as string)))
+        .orderBy(desc(cosiriEvidence.createdAt));
+    } else {
+      rows = await db.select().from(cosiriEvidence)
+        .where(eq(cosiriEvidence.assessmentId, assessmentId))
+        .orderBy(desc(cosiriEvidence.createdAt));
+    }
+    return res.json(rows);
+  } catch (err) {
+    console.error("listEvidence error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST save evidence record after upload
+router.post("/cosiri/assessments/:id/evidence", async (req, res) => {
+  try {
+    const assessmentId = parseInt(req.params.id);
+    const { dimensionId, fileName, fileType, fileSize, objectPath } = req.body;
+    if (!dimensionId || !fileName || !objectPath) {
+      return res.status(400).json({ error: "dimensionId, fileName, and objectPath are required" });
+    }
+    const [row] = await db.insert(cosiriEvidence).values({
+      assessmentId,
+      dimensionId,
+      fileName,
+      fileType: fileType || null,
+      fileSize: fileSize || null,
+      objectPath,
+      summaryStatus: "idle",
+    }).returning();
+    return res.status(201).json(row);
+  } catch (err) {
+    console.error("createEvidence error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// DELETE evidence record
+router.delete("/cosiri/evidence/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await db.delete(cosiriEvidence).where(eq(cosiriEvidence.id, id));
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("deleteEvidence error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST analyze a single evidence file with AI
+router.post("/cosiri/evidence/:id/analyze", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [evidence] = await db.select().from(cosiriEvidence).where(eq(cosiriEvidence.id, id));
+    if (!evidence) return res.status(404).json({ error: "Evidence not found" });
+
+    await db.update(cosiriEvidence).set({ summaryStatus: "processing" }).where(eq(cosiriEvidence.id, id));
+
+    const dimMeta = DIMENSION_META[evidence.dimensionId] || { name: evidence.dimensionId, block: "Unknown" };
+
+    let fileContent = "";
+    try {
+      const file = await storageService.getObjectEntityFile(evidence.objectPath);
+      const [fileData] = await file.download();
+      fileContent = fileData.toString("utf-8").slice(0, 12000);
+    } catch (downloadErr) {
+      console.error("File download error:", downloadErr);
+      fileContent = `[File: ${evidence.fileName} — content could not be extracted]`;
+    }
+
+    const prompt = `You are a COSIRI (Consumer Sustainability Industry Readiness Index) expert auditor.
+
+The following document has been submitted as evidence for the dimension:
+Dimension: ${dimMeta.name}
+Building Block: ${dimMeta.block}
+
+Filename: ${evidence.fileName}
+
+Document content:
+---
+${fileContent}
+---
+
+Please provide a concise, structured evidence summary (3-5 sentences) covering:
+1. What this document demonstrates about the organisation's maturity in "${dimMeta.name}"
+2. What COSIRI band level it supports and why
+3. Any gaps or recommendations for improving the evidence quality
+
+Keep the summary factual, specific, and directly tied to the COSIRI dimension criteria.`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 400,
+    });
+
+    const summary = completion.choices[0]?.message?.content || "Unable to generate summary.";
+    const [updated] = await db.update(cosiriEvidence)
+      .set({ aiSummary: summary, summaryStatus: "completed" })
+      .where(eq(cosiriEvidence.id, id))
+      .returning();
+
+    return res.json(updated);
+  } catch (err) {
+    console.error("analyzeEvidence error:", err);
+    await db.update(cosiriEvidence).set({ summaryStatus: "failed" }).where(eq(cosiriEvidence.id, parseInt(req.params.id)));
+    return res.status(500).json({ error: "Analysis failed" });
   }
 });
 

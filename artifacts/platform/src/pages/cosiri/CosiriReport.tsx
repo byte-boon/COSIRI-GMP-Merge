@@ -1,9 +1,21 @@
 import { useState, useEffect } from "react";
 import { useRoute, Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
-import { ChevronLeft, Sparkles, RefreshCw, FileText, CheckCircle2, Clock } from "lucide-react";
+import { ChevronLeft, Sparkles, RefreshCw, FileText, CheckCircle2, Clock, Paperclip } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useGenerateCosiriInsight, useGetLatestCosiriInsights } from "@workspace/api-client-react";
+import { COSIRI_DATA } from "@/lib/cosiri-data";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+interface EvidenceItem {
+  id: number;
+  dimensionId: string;
+  fileName: string;
+  aiSummary: string | null;
+  summaryStatus: string;
+}
 
 type InsightType = "executive_summary" | "gap_analysis" | "roadmap";
 
@@ -25,6 +37,24 @@ export default function CosiriReport() {
     query: { enabled: !!id },
   });
   const { mutateAsync: generateInsight, isPending } = useGenerateCosiriInsight();
+
+  const { data: allEvidence = [] } = useQuery<EvidenceItem[]>({
+    queryKey: ["all-evidence", id],
+    queryFn: async () => {
+      const res = await fetch(`${BASE}/api/cosiri/assessments/${id}/evidence`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!id,
+  });
+
+  const evidenceByDimension = allEvidence.reduce<Record<string, EvidenceItem[]>>((acc, e) => {
+    acc[e.dimensionId] = acc[e.dimensionId] || [];
+    acc[e.dimensionId].push(e);
+    return acc;
+  }, {});
+
+  const analyzedEvidence = allEvidence.filter(e => e.summaryStatus === "completed" && e.aiSummary);
 
   // Auto-save indicator: show "Saved" when a tab already has content
   useEffect(() => {
@@ -196,6 +226,66 @@ export default function CosiriReport() {
           )}
         </div>
       </div>
+      {/* Evidence Summary Section */}
+      {allEvidence.length > 0 && (
+        <div className="mt-8">
+          <div className="flex items-center gap-3 mb-4">
+            <Paperclip className="w-5 h-5 text-muted-foreground" />
+            <h2 className="text-xl font-bold">Evidence Summary</h2>
+            <span className="px-2.5 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-semibold">
+              {allEvidence.length} file{allEvidence.length !== 1 ? "s" : ""} · {analyzedEvidence.length} AI analysed
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            {COSIRI_DATA.filter(dim => evidenceByDimension[dim.id]?.length > 0).map(dim => {
+              const files = evidenceByDimension[dim.id];
+              const analysed = files.filter(f => f.summaryStatus === "completed" && f.aiSummary);
+              return (
+                <div key={dim.id} className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 border-b border-border bg-muted/20 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">{dim.id}</span>
+                      <h3 className="font-semibold text-foreground">{dim.name}</h3>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {files.length} file{files.length !== 1 ? "s" : ""}{analysed.length > 0 ? ` · ${analysed.length} analysed` : ""}
+                    </span>
+                  </div>
+                  <div className="divide-y divide-border">
+                    {files.map(file => (
+                      <div key={file.id} className="px-6 py-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm font-medium text-foreground">{file.fileName}</span>
+                          {file.summaryStatus === "completed" && (
+                            <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
+                              <CheckCircle2 className="w-3 h-3" /> AI Analysed
+                            </span>
+                          )}
+                        </div>
+                        {file.aiSummary ? (
+                          <div className="bg-purple-50 border border-purple-100 rounded-lg p-4">
+                            <div className="flex items-center gap-1.5 mb-2">
+                              <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-600">AI Evidence Summary</span>
+                            </div>
+                            <p className="text-sm text-foreground leading-relaxed">{file.aiSummary}</p>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic">
+                            {file.summaryStatus === "processing" ? "AI analysis in progress…" : "Not yet analysed — open assessment to run AI analysis"}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }

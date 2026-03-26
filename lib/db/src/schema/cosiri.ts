@@ -42,6 +42,23 @@ export const cosiriUsageCounters = pgTable("cosiri_usage_counters", {
   tokensUsed: integer("tokens_used").notNull().default(0),
 });
 
+export const cosiriEvidence = pgTable("cosiri_evidence", {
+  id: serial("id").primaryKey(),
+  assessmentId: integer("assessment_id").notNull(),
+  dimensionId: text("dimension_id").notNull(),
+  fileName: text("file_name").notNull(),
+  fileType: text("file_type"),
+  fileSize: integer("file_size"),
+  objectPath: text("object_path").notNull(),
+  aiSummary: text("ai_summary"),
+  summaryStatus: text("summary_status").notNull().default("idle"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertCosiriEvidenceSchema = createInsertSchema(cosiriEvidence).omit({ id: true, createdAt: true });
+export type InsertCosiriEvidence = z.infer<typeof insertCosiriEvidenceSchema>;
+export type CosiriEvidence = typeof cosiriEvidence.$inferSelect;
+
 export const insertCosiriAssessmentSchema = createInsertSchema(cosiriAssessments).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertCosiriAssessment = z.infer<typeof insertCosiriAssessmentSchema>;
 export type CosiriAssessment = typeof cosiriAssessments.$inferSelect;

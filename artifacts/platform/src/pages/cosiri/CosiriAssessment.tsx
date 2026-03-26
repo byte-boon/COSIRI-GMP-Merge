@@ -1,15 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { CheckCircle2, Save, Activity, Info } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { COSIRI_DATA, BUILDING_BLOCKS, BAND_DESCRIPTIONS } from "@/lib/cosiri-data";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useCreateCosiriAssessment, useSaveCosiriAnswers } from "@workspace/api-client-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { EvidenceBox } from "@/components/EvidenceBox";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const BAND_COLORS: Record<number, string> = {
   0: "text-slate-400",
@@ -25,9 +24,30 @@ export default function CosiriAssessment() {
   const { company } = useCompany();
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [activeBlock, setActiveBlock] = useState<string>(BUILDING_BLOCKS[0]);
+  const [draftId, setDraftId] = useState<number | null>(null);
+  const [draftCreating, setDraftCreating] = useState(false);
 
   const { mutateAsync: createAssessment, isPending: isCreating } = useCreateCosiriAssessment();
   const { mutateAsync: saveAnswers, isPending: isSaving } = useSaveCosiriAnswers();
+
+  // Create a draft assessment on mount so evidence can be attached immediately
+  useEffect(() => {
+    if (!company || draftId || draftCreating) return;
+    setDraftCreating(true);
+
+    createAssessment({
+      data: {
+        companyId: company.id,
+        companyName: company.name,
+        industry: company.industry,
+        status: "draft",
+        overallScore: 0,
+      },
+    })
+      .then(a => setDraftId(a.id))
+      .catch(console.error)
+      .finally(() => setDraftCreating(false));
+  }, [company]);
 
   const handleAnswer = (dimensionId: string, score: number) => {
     setAnswers(prev => ({ ...prev, [dimensionId]: score }));
@@ -38,29 +58,26 @@ export default function CosiriAssessment() {
   const progress = Math.round((totalAnswered / COSIRI_DATA.length) * 100);
 
   const handleSubmit = async () => {
-    if (!company) return;
+    if (!company || !draftId) return;
     try {
       const overallScore = Object.values(answers).reduce((a, b) => a + b, 0) / COSIRI_DATA.length;
 
-      const assessment = await createAssessment({
-        data: {
-          companyId: company.id,
-          companyName: company.name,
-          industry: company.industry,
-          status: "completed",
-          overallScore: Math.round(overallScore),
-        },
+      // Finalise the draft assessment
+      await fetch(`${BASE}/api/cosiri/assessments/${draftId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "completed", overallScore: Math.round(overallScore) }),
       });
 
       const answerPayload = Object.entries(answers).map(([dimensionId, score]) => ({
-        assessmentId: assessment.id,
+        assessmentId: draftId,
         dimensionId,
         score,
         notes: "",
       }));
 
-      await saveAnswers({ id: assessment.id, data: answerPayload });
-      setLocation(`/cosiri/results/${assessment.id}`);
+      await saveAnswers({ id: draftId, data: answerPayload });
+      setLocation(`/cosiri/results/${draftId}`);
     } catch (error) {
       console.error(error);
     }
@@ -71,13 +88,25 @@ export default function CosiriAssessment() {
       <div className="mb-8 flex items-end justify-between">
         <div>
           <h1 className="text-3xl font-display font-bold mb-2">Run Assessment</h1>
-          <p className="text-muted-foreground">Select the maturity band for each dimension. Hover over the <Info className="inline w-3.5 h-3.5 mb-0.5" /> icon for requirements.</p>
+          <p className="text-muted-foreground">
+            Select the maturity band for each dimension. Attach supporting evidence below each one.
+          </p>
         </div>
-        <div className="flex flex-col items-end">
-          <span className="text-sm font-medium mb-1">{progress}% Complete</span>
+        <div className="flex flex-col items-end gap-1">
+          <span className="text-sm font-medium">{progress}% Complete</span>
           <div className="w-48 h-2 bg-secondary rounded-full overflow-hidden">
             <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
           </div>
+          {draftCreating && (
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Activity className="w-3 h-3 animate-spin" /> Preparing session…
+            </span>
+          )}
+          {draftId && !draftCreating && (
+            <span className="text-xs text-green-600 flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" /> Evidence attachments enabled
+            </span>
+          )}
         </div>
       </div>
 
@@ -119,6 +148,7 @@ export default function CosiriAssessment() {
                 <p className="text-muted-foreground mt-1">{dim.question}</p>
               </div>
 
+              {/* Band selection grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {dim.options.map(opt => {
                   const isSelected = answers[dim.id] === opt.score;
@@ -129,18 +159,13 @@ export default function CosiriAssessment() {
                       onClick={() => handleAnswer(dim.id, opt.score)}
                       className={`text-left p-4 rounded-xl border transition-all ${isSelected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border bg-background hover:border-primary/40"}`}
                     >
-                      {/* Band header row */}
                       <div className="flex justify-between items-center mb-2">
                         <div className="flex items-center gap-1.5">
                           <span className={`font-bold ${isSelected ? "text-primary" : "text-foreground"}`}>
                             {opt.label}
                           </span>
-                          {/* Info tooltip */}
                           <Tooltip delayDuration={200}>
-                            <TooltipTrigger
-                              asChild
-                              onClick={e => e.stopPropagation()}
-                            >
+                            <TooltipTrigger asChild onClick={e => e.stopPropagation()}>
                               <span className="cursor-help">
                                 <Info className={`w-3.5 h-3.5 ${BAND_COLORS[opt.score]} opacity-70 hover:opacity-100 transition-opacity`} />
                               </span>
@@ -172,24 +197,38 @@ export default function CosiriAssessment() {
                         </div>
                         {isSelected && <CheckCircle2 className="w-4 h-4 text-primary" />}
                       </div>
-
-                      {/* Description */}
                       <p className="text-sm text-muted-foreground leading-snug">{opt.description}</p>
                     </button>
                   );
                 })}
               </div>
+
+              {/* Evidence attachment box — available once draft is created */}
+              {draftId ? (
+                <EvidenceBox
+                  assessmentId={draftId}
+                  dimensionId={dim.id}
+                  dimensionName={dim.name}
+                />
+              ) : (
+                <div className="mt-4 pt-4 border-t border-border/60">
+                  <p className="text-xs text-muted-foreground flex items-center gap-2">
+                    <Activity className="w-3 h-3 animate-spin" />
+                    Evidence attachments will be available momentarily…
+                  </p>
+                </div>
+              )}
             </div>
           ))}
 
           <div className="pt-6 border-t border-border flex justify-end">
             <button
               onClick={handleSubmit}
-              disabled={progress !== 100 || isCreating || isSaving}
+              disabled={progress !== 100 || isCreating || isSaving || !draftId}
               className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20 hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-50 transition-all flex items-center gap-2"
             >
               <Save className="w-5 h-5" />
-              {isCreating ? "Saving..." : "Submit Assessment"}
+              {isSaving ? "Saving..." : "Submit Assessment"}
             </button>
           </div>
         </div>
