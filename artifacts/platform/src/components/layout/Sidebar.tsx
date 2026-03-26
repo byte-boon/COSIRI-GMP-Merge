@@ -111,25 +111,26 @@ export function Sidebar() {
         )}
       </nav>
 
-      <div className="p-4 border-t border-sidebar-border bg-sidebar-accent/10">
+      <div className="p-4 border-t border-sidebar-border bg-sidebar-accent/10 space-y-3">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
+          <div className="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
             {company.name.charAt(0)}
           </div>
           <div className="flex-1 overflow-hidden">
             <p className="text-sm font-medium truncate">{company.name}</p>
             <p className="text-[10px] text-sidebar-foreground/50 truncate">{company.industry}</p>
           </div>
-          <button 
-            onClick={() => {
-              logout();
-              window.location.href = import.meta.env.BASE_URL;
-            }}
-            className="p-2 rounded-md text-sidebar-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
         </div>
+        <button
+          onClick={() => {
+            logout();
+            window.location.href = import.meta.env.BASE_URL;
+          }}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10 border border-sidebar-border hover:border-destructive/30 transition-all"
+        >
+          <LogOut className="w-4 h-4" />
+          Sign out
+        </button>
       </div>
     </aside>
   );
