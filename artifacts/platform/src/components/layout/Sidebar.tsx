@@ -9,6 +9,7 @@ import {
   FileText,
   AlertTriangle,
   BarChart3,
+  ArrowRightLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -53,7 +54,18 @@ export function Sidebar() {
         {/* COSIRI Module */}
         {showCosiri && (
           <div>
-            <p className="px-3 text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-widest mb-3">COSIRI</p>
+            <div className="flex items-center justify-between px-3 mb-3">
+              <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-widest">COSIRI</p>
+              {showGmp && (
+                <Link
+                  href="/gmp"
+                  title="Switch to GMP"
+                  className="flex items-center gap-1 text-[10px] font-semibold text-sidebar-foreground/40 hover:text-blue-400 hover:bg-blue-500/10 px-1.5 py-0.5 rounded transition-colors"
+                >
+                  <ArrowRightLeft className="w-3 h-3" /> GMP
+                </Link>
+              )}
+            </div>
             <div className="space-y-1">
               <Link href="/cosiri" className={cn(
                 "flex items-center px-3 py-2 rounded-lg text-sm transition-all group",
@@ -80,7 +92,18 @@ export function Sidebar() {
         {/* GMP Module */}
         {showGmp && (
           <div>
-            <p className="px-3 text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-widest mb-3">GMP</p>
+            <div className="flex items-center justify-between px-3 mb-3">
+              <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-widest">GMP</p>
+              {showCosiri && (
+                <Link
+                  href="/cosiri"
+                  title="Switch to COSIRI"
+                  className="flex items-center gap-1 text-[10px] font-semibold text-sidebar-foreground/40 hover:text-primary hover:bg-primary/10 px-1.5 py-0.5 rounded transition-colors"
+                >
+                  <ArrowRightLeft className="w-3 h-3" /> COSIRI
+                </Link>
+              )}
+            </div>
             <div className="space-y-1">
               <Link href="/gmp" className={cn(
                 "flex items-center px-3 py-2 rounded-lg text-sm transition-all group",
