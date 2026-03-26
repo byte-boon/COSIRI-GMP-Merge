@@ -10,9 +10,13 @@ import {
   AlertTriangle,
   BarChart3,
   ArrowRightLeft,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/contexts/CompanyContext";
+import {
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function Sidebar() {
   const [location] = useLocation();
@@ -55,7 +59,41 @@ export function Sidebar() {
         {showCosiri && (
           <div>
             <div className="flex items-center justify-between px-3 mb-3">
-              <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-widest">COSIRI</p>
+              <TooltipProvider delayDuration={300}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="flex items-center gap-1.5 group cursor-default">
+                      <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-widest">COSIRI</p>
+                      <Info className="w-3 h-3 text-sidebar-foreground/25 group-hover:text-primary/60 transition-colors" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    sideOffset={12}
+                    className="bg-card text-card-foreground border border-border shadow-xl rounded-xl p-4 max-w-[280px] z-50"
+                  >
+                    <p className="font-bold text-sm text-foreground mb-0.5">Consumer Sustainability Industry Readiness Index</p>
+                    <p className="text-[10px] font-semibold text-primary uppercase tracking-wider mb-3">COSIRI</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+                      A 24-dimension maturity framework that benchmarks an organisation's sustainability performance across Strategy &amp; Risk, Business Processes, Technology, and Governance — scored on a Band 0–5 scale.
+                    </p>
+                    <div className="space-y-1 mb-3 text-xs">
+                      <p><span className="font-semibold text-foreground">Developed by:</span> <span className="text-muted-foreground">EY &amp; industry partners</span></p>
+                      <p><span className="font-semibold text-foreground">Launched:</span> <span className="text-muted-foreground">2020</span></p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-foreground mb-1.5">Benefits for organisations</p>
+                      <ul className="space-y-1">
+                        {["Structured maturity benchmark (Band 0–5)", "AI-generated gap analysis & roadmaps", "Industry peer benchmarking", "ESG readiness & reporting alignment", "Evidence-based investment prioritisation"].map(b => (
+                          <li key={b} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                            <span className="text-primary mt-0.5 shrink-0">✦</span>{b}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               {showGmp && (
                 <Link
                   href="/gmp"
@@ -93,7 +131,41 @@ export function Sidebar() {
         {showGmp && (
           <div>
             <div className="flex items-center justify-between px-3 mb-3">
-              <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-widest">GMP</p>
+              <TooltipProvider delayDuration={300}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="flex items-center gap-1.5 group cursor-default">
+                      <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-widest">GMP</p>
+                      <Info className="w-3 h-3 text-sidebar-foreground/25 group-hover:text-blue-400/70 transition-colors" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    sideOffset={12}
+                    className="bg-card text-card-foreground border border-border shadow-xl rounded-xl p-4 max-w-[280px] z-50"
+                  >
+                    <p className="font-bold text-sm text-foreground mb-0.5">Good Manufacturing Practices</p>
+                    <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider mb-3">GMP</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+                      A globally recognised system of regulations and standards ensuring products are consistently produced and controlled to quality standards that minimise risks of contamination, mix-ups, and errors throughout manufacturing.
+                    </p>
+                    <div className="space-y-1 mb-3 text-xs">
+                      <p><span className="font-semibold text-foreground">Developed by:</span> <span className="text-muted-foreground">US FDA; adopted by WHO, EMA &amp; global regulators</span></p>
+                      <p><span className="font-semibold text-foreground">Origin:</span> <span className="text-muted-foreground">1963 (US federal GMP regulations)</span></p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-foreground mb-1.5">Benefits for organisations</p>
+                      <ul className="space-y-1">
+                        {["Regulatory compliance & audit readiness", "Systematic findings & CAPA tracking", "Risk mitigation across manufacturing", "Consumer safety assurance", "Licence to operate in regulated markets"].map(b => (
+                          <li key={b} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                            <span className="text-blue-500 mt-0.5 shrink-0">✦</span>{b}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               {showCosiri && (
                 <Link
                   href="/cosiri"
