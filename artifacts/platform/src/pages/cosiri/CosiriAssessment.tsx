@@ -37,13 +37,13 @@ const SCORE_RING: Record<number, string> = {
   5: "ring-green-400",
 };
 
-const BAND_CARD: Record<number, { idle: string; selected: string; border: string; selectedBorder: string }> = {
-  0: { idle: "bg-slate-100/70 border-slate-200",       selected: "bg-slate-100   border-slate-400   ring-slate-300",   border: "border-slate-200",   selectedBorder: "border-slate-400"   },
-  1: { idle: "bg-red-50/70    border-red-100",          selected: "bg-red-50      border-red-400     ring-red-200",     border: "border-red-100",     selectedBorder: "border-red-400"     },
-  2: { idle: "bg-orange-50/70 border-orange-100",       selected: "bg-orange-50   border-orange-400  ring-orange-200",  border: "border-orange-100",  selectedBorder: "border-orange-400"  },
-  3: { idle: "bg-amber-50/70  border-amber-100",        selected: "bg-amber-50    border-amber-400   ring-amber-200",   border: "border-amber-100",   selectedBorder: "border-amber-400"   },
-  4: { idle: "bg-blue-50/70   border-blue-100",         selected: "bg-blue-50     border-blue-400    ring-blue-200",    border: "border-blue-100",    selectedBorder: "border-blue-400"    },
-  5: { idle: "bg-green-50/70  border-green-100",        selected: "bg-green-50    border-green-400   ring-green-200",   border: "border-green-100",   selectedBorder: "border-green-400"   },
+const BAND_CARD: Record<number, { accent: string; ring: string }> = {
+  0: { accent: "border-l-slate-400",  ring: "ring-slate-300"  },
+  1: { accent: "border-l-red-400",    ring: "ring-red-200"    },
+  2: { accent: "border-l-orange-400", ring: "ring-orange-200" },
+  3: { accent: "border-l-amber-400",  ring: "ring-amber-200"  },
+  4: { accent: "border-l-blue-400",   ring: "ring-blue-200"   },
+  5: { accent: "border-l-green-500",  ring: "ring-green-200"  },
 };
 
 const BLOCK_CONFIG: Record<string, {
@@ -535,7 +535,11 @@ export default function CosiriAssessment() {
                     <button
                       key={opt.score}
                       onClick={() => handleAnswer(dim.id, opt.score)}
-                      className={`text-left p-4 rounded-xl border transition-all ${isSelected ? `${bc.selected} ring-1` : `${bc.idle} hover:brightness-95`}`}
+                      className={`text-left p-4 rounded-xl border border-l-4 transition-all ${bc.accent} ${
+                        isSelected
+                          ? `bg-background border-border ring-1 ${bc.ring}`
+                          : "bg-background border-border hover:bg-muted/40"
+                      }`}
                     >
                       <div className="flex justify-between items-center mb-2">
                         <div className="flex items-center gap-1.5">
