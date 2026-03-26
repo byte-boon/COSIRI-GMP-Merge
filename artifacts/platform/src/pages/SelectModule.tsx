@@ -14,11 +14,14 @@ const MODULES = [
     full: "Corporate Sustainability Industry Readiness Index",
     description: "24-dimension sustainability maturity scoring across strategy, operations, technology and governance. Generates AI-powered insights, star emblem ratings, and transformation roadmaps.",
     tags: ["24 Dimensions", "AI Insights", "Star Emblem", "Benchmarking"],
-    color: "from-violet-600/10 to-violet-500/5 border-violet-200 hover:border-violet-400",
-    activeColor: "from-violet-600/15 to-violet-500/10 border-violet-500 ring-2 ring-violet-500/20",
-    iconBg: "bg-violet-100 text-violet-600",
-    activeIconBg: "bg-violet-600 text-white",
-    tagColor: "bg-violet-50 text-violet-600 border-violet-100",
+    cardBase: "bg-blue-50 border-blue-200 text-blue-700",
+    cardHover: "hover:border-blue-400 hover:bg-blue-100/70",
+    cardActive: "ring-2 ring-blue-500/30 border-blue-500 bg-blue-100/80",
+    iconBg: "bg-blue-100 text-blue-600",
+    activeIconBg: "bg-blue-600 text-white",
+    tagColor: "bg-white/70 text-blue-700 border-blue-200",
+    subText: "text-blue-500",
+    checkColor: "text-blue-600",
   },
   {
     key: "gmp" as const,
@@ -27,11 +30,14 @@ const MODULES = [
     full: "Good Manufacturing Practice",
     description: "Checklist-based compliance audit tracker with findings management, CAPA workflows, audit trails, and regulatory reporting for manufacturing environments.",
     tags: ["Audit Checklists", "Findings & CAPA", "Reports", "Compliance"],
-    color: "from-emerald-600/10 to-emerald-500/5 border-emerald-200 hover:border-emerald-400",
-    activeColor: "from-emerald-600/15 to-emerald-500/10 border-emerald-500 ring-2 ring-emerald-500/20",
-    iconBg: "bg-emerald-100 text-emerald-600",
-    activeIconBg: "bg-emerald-600 text-white",
-    tagColor: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    cardBase: "bg-green-50 border-green-200 text-green-700",
+    cardHover: "hover:border-green-400 hover:bg-green-100/70",
+    cardActive: "ring-2 ring-green-500/30 border-green-500 bg-green-100/80",
+    iconBg: "bg-green-100 text-green-600",
+    activeIconBg: "bg-green-600 text-white",
+    tagColor: "bg-white/70 text-green-700 border-green-200",
+    subText: "text-green-500",
+    checkColor: "text-green-600",
   },
   {
     key: "both" as const,
@@ -40,11 +46,14 @@ const MODULES = [
     full: "COSIRI + GMP Combined",
     description: "Access both COSIRI sustainability scoring and GMP compliance auditing in a unified workspace. Shared company profile, cross-module reporting, and a single sign-on experience.",
     tags: ["COSIRI + GMP", "Unified Workspace", "All Features", "Best Value"],
-    color: "from-blue-600/10 to-sky-500/5 border-blue-200 hover:border-blue-400",
-    activeColor: "from-blue-600/15 to-sky-500/10 border-blue-500 ring-2 ring-blue-500/20",
-    iconBg: "bg-blue-100 text-blue-600",
-    activeIconBg: "bg-blue-600 text-white",
-    tagColor: "bg-blue-50 text-blue-600 border-blue-100",
+    cardBase: "bg-purple-50 border-purple-200 text-purple-700",
+    cardHover: "hover:border-purple-400 hover:bg-purple-100/70",
+    cardActive: "ring-2 ring-purple-500/30 border-purple-500 bg-purple-100/80",
+    iconBg: "bg-purple-100 text-purple-600",
+    activeIconBg: "bg-purple-600 text-white",
+    tagColor: "bg-white/70 text-purple-700 border-purple-200",
+    subText: "text-purple-500",
+    checkColor: "text-purple-600",
   },
 ];
 
@@ -143,13 +152,13 @@ export default function SelectModule() {
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setSelected(mod.key)}
-                  className={`relative text-left p-6 rounded-2xl border bg-gradient-to-br transition-all duration-200 ${
-                    isSelected ? mod.activeColor : mod.color
+                  className={`relative text-left p-6 rounded-2xl border transition-all duration-200 ${mod.cardBase} ${
+                    isSelected ? mod.cardActive : mod.cardHover
                   }`}
                 >
                   {isSelected && (
                     <div className="absolute top-4 right-4">
-                      <CheckCircle2 className="w-5 h-5 text-primary" />
+                      <CheckCircle2 className={`w-5 h-5 ${mod.checkColor}`} />
                     </div>
                   )}
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-colors ${
@@ -157,9 +166,9 @@ export default function SelectModule() {
                   }`}>
                     <Icon className="w-6 h-6" />
                   </div>
-                  <h2 className="text-lg font-bold text-foreground mb-0.5">{mod.label}</h2>
-                  <p className="text-xs text-muted-foreground mb-3 font-medium">{mod.full}</p>
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-4">{mod.description}</p>
+                  <h2 className="text-lg font-bold mb-0.5">{mod.label}</h2>
+                  <p className={`text-xs mb-3 font-medium opacity-70`}>{mod.full}</p>
+                  <p className="text-sm opacity-75 leading-relaxed mb-4">{mod.description}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {mod.tags.map(tag => (
                       <span key={tag} className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${mod.tagColor}`}>
