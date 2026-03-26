@@ -258,385 +258,440 @@ export default function CosiriReport() {
     5: "Net-zero pathway aligned. Full Scope 1-3 transparency with third-party verification.",
   };
 
-  const card = "bg-card border border-border rounded-2xl shadow-sm overflow-hidden mb-6";
+  // ── Corrected display scoring (overallScore stored as avg×10) ──
+  const displayScore = parseFloat((overallScore / 10).toFixed(1));
+  const starCount    = Math.round(displayScore);
+  const maturityBand: number =
+    displayScore <= 0 ? 0 : displayScore <= 1 ? 1 : displayScore <= 2 ? 2 :
+    displayScore <= 3 ? 3 : displayScore <= 4 ? 4 : 5;
+  const bandDesc = BAND_DESCRIPTIONS[maturityBand];
+  const bandLabel: Record<number, string> = {
+    5: "Leader", 4: "Advanced", 3: "Intermediate", 2: "Developing", 1: "Beginner", 0: "None",
+  };
+
+  // Key Criteria top/bottom 3
+  const allScored = COSIRI_DATA
+    .map(d => ({ dim: d, score: scoreMap[d.id] ?? 0 }))
+    .filter(d => d.score > 0)
+    .sort((a, b) => b.score - a.score);
+  const top3 = allScored.slice(0, 3);
+  const bot3 = [...allScored].reverse().slice(0, 3);
+
+  const card = "bg-card border border-border rounded-2xl shadow-sm overflow-hidden";
 
   return (
     <AppLayout>
-      {/* ── Page header ── */}
-      <div className="mb-6">
-        <Link href={`/cosiri/results/${id}`} className="text-sm text-muted-foreground hover:text-primary flex items-center mb-4 transition-colors w-fit">
+      {/* Back link */}
+      <div className="mb-5">
+        <Link href={`/cosiri/results/${id}`} className="text-sm text-muted-foreground hover:text-primary flex items-center transition-colors w-fit">
           <ChevronLeft className="w-4 h-4 mr-1" /> Back to Results
         </Link>
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-display font-bold">COSIRI Assessment Report</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {assessment?.companyName && <><span className="font-medium text-foreground">{assessment.companyName}</span> · </>}
-              {siteProfile?.assessmentDate || new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
-            </p>
+      </div>
+      {/* ════════════════════════════════════════════
+          HERO BANNER — Magazine Cover
+      ════════════════════════════════════════════ */}
+      <div className="relative rounded-3xl overflow-hidden mb-8 shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950" />
+        <div className="absolute inset-0 opacity-30" style={{ backgroundImage: "radial-gradient(circle at 18% 55%, rgba(16,185,129,0.5) 0%, transparent 55%), radial-gradient(circle at 82% 15%, rgba(99,102,241,0.4) 0%, transparent 50%)" }} />
+        <div className="relative z-10 px-8 py-10 flex items-start justify-between gap-8">
+          {/* Left: identity */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 mb-5">
+              <span className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-bold uppercase tracking-widest">
+                COSIRI Assessment Report
+              </span>
+              <span className="px-2.5 py-1 rounded-full bg-white/10 text-white/50 text-xs font-mono">
+                {siteProfile?.cosiriVersion ?? "COSIRI-24"}
+              </span>
+            </div>
+            <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-1 leading-tight truncate">
+              {assessment?.companyName ?? "Your Company"}
+            </h1>
+            {(siteProfile?.siteName || siteProfile?.location) && (
+              <p className="text-emerald-300 font-medium text-lg mb-5">
+                {[siteProfile.siteName, siteProfile.location].filter(Boolean).join(" · ")}
+              </p>
+            )}
+            <div className="flex items-center gap-2 mb-4">
+              {[1,2,3,4,5].map(i => (
+                <Star key={i} className={`w-9 h-9 ${i <= starCount ? "fill-amber-400 text-amber-400" : "text-white/15 fill-white/5"}`} />
+              ))}
+              <span className="text-white/50 text-sm ml-2">{MATURITY_LABELS[maturityBand] ?? "—"}</span>
+            </div>
+            <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-white/45">
+              {siteProfile?.assessmentDate && <span className="flex items-center gap-1.5"><Calendar className="w-3 h-3" />{siteProfile.assessmentDate}</span>}
+              {siteProfile?.assessorName && <span className="flex items-center gap-1.5"><User className="w-3 h-3" />{siteProfile.assessorName}{siteProfile.assessorCredentials ? ` · ${siteProfile.assessorCredentials}` : ""}</span>}
+              {assessment?.industry && <span className="flex items-center gap-1.5"><Package className="w-3 h-3" />{assessment.industry}</span>}
+            </div>
           </div>
-          <button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium shadow-md shadow-primary/20 flex items-center gap-2 hover:bg-primary/90 transition-colors text-sm">
-            <Download className="w-4 h-4" /> Export PDF
-          </button>
+          {/* Right: score orb + band + export */}
+          <div className="flex flex-col items-center shrink-0">
+            <div className="w-36 h-36 rounded-full bg-white/10 border-2 border-white/20 flex flex-col items-center justify-center backdrop-blur-sm mb-4 shadow-inner">
+              <span className="text-6xl font-bold text-white leading-none">{displayScore}</span>
+              <span className="text-white/40 text-base mt-1">/5</span>
+            </div>
+            <div className={`px-4 py-2 rounded-full text-xs font-bold mb-4 ${
+              maturityBand >= 4 ? "bg-green-400/20 text-green-300 border border-green-400/30" :
+              maturityBand >= 2 ? "bg-blue-400/20 text-blue-300 border border-blue-400/30" :
+              "bg-slate-400/20 text-slate-300 border border-slate-400/30"
+            }`}>
+              Band {maturityBand} — {bandDesc?.title}
+            </div>
+            <button className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl font-medium flex items-center gap-2 text-xs transition-colors">
+              <Download className="w-3.5 h-3.5" /> Export PDF
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════
-          SECTION 1 — Company Profile
-      ═══════════════════════════════════════ */}
-      <div className={card}>
-        <SectionHeader num={1} icon={<Building2 className="w-4 h-4" />} title="Company Profile" subtitle="Who was assessed" />
-        <div className="p-6">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-4">
-            <ProfileField icon={<Building2 className="w-4 h-4" />} label="Company" value={assessment?.companyName} />
-            <ProfileField icon={<Building2 className="w-4 h-4" />} label="Site Name" value={siteProfile?.siteName} />
-            <ProfileField icon={<MapPin className="w-4 h-4" />} label="Location" value={siteProfile?.location} />
-            <ProfileField icon={<Package className="w-4 h-4" />} label="Industry" value={assessment?.industry} />
-            <ProfileField icon={<Package className="w-4 h-4" />} label="Sub-Sector" value={siteProfile?.subSector} />
-            <ProfileField icon={<Users className="w-4 h-4" />} label="Employees (site)" value={siteProfile?.employeeCount} />
-            <ProfileField icon={<Building2 className="w-4 h-4" />} label="Production Area" value={siteProfile?.productionArea ? `${siteProfile.productionArea} m²` : undefined} />
-            <ProfileField icon={<Package className="w-4 h-4" />} label="Products Manufactured" value={siteProfile?.productsManufactured} />
-            <ProfileField icon={<Calendar className="w-4 h-4" />} label="Assessment Date" value={siteProfile?.assessmentDate} />
-            <ProfileField icon={<Building2 className="w-4 h-4" />} label="COSIRI Version" value={siteProfile?.cosiriVersion ?? "COSIRI-24"} />
-            <ProfileField icon={<User className="w-4 h-4" />} label="Certified Assessor (CCA)" value={siteProfile?.assessorName} />
-            <ProfileField icon={<User className="w-4 h-4" />} label="Assessor Credentials" value={siteProfile?.assessorCredentials} />
+      {/* ════════════════════════════════════════════
+          KPI STRIP — 5 tiles
+      ════════════════════════════════════════════ */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        {([
+          { label: "Overall Score",       value: `${displayScore}`, sub: "out of 5.0",            color: "text-primary" },
+          { label: "Maturity Band",       value: `Band ${maturityBand}`, sub: bandDesc?.title ?? "—", color: maturityBand >= 4 ? "text-green-600" : maturityBand >= 2 ? "text-blue-600" : "text-slate-600" },
+          { label: "Industry Percentile", value: `${percentileEst}th`, sub: `vs ${industry || "industry"}`, color: "text-violet-600" },
+          { label: "Above Industry Avg",  value: `${aboveAvg}`,     sub: "of 24 dimensions",      color: "text-green-600" },
+          { label: "Below Industry Avg",  value: `${belowAvg}`,     sub: "of 24 dimensions",      color: "text-red-500"   },
+        ] as const).map(({ label, value, sub, color }) => (
+          <div key={label} className={`${card} p-5`}>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">{label}</p>
+            <p className={`text-3xl font-bold ${color}`}>{value}</p>
+            <p className="text-xs text-muted-foreground mt-1">{sub}</p>
           </div>
-          {!siteProfile?.siteName && (
-            <p className="mt-4 text-xs text-muted-foreground italic">Complete the Company & Site Profile in the assessment to populate these fields.</p>
-          )}
-        </div>
+        ))}
       </div>
 
-      {/* ═══════════════════════════════════════
-          SECTION 2 — Executive Summary
-      ═══════════════════════════════════════ */}
-      <div className={card}>
-        <SectionHeader num={2} icon={<FileText className="w-4 h-4" />} title="Executive Summary" subtitle="Quick snapshot for leadership" />
+      {/* ════════════════════════════════════════════
+          TWO-COLUMN BODY
+      ════════════════════════════════════════════ */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+
+        {/* ── LEFT 2/3 ── */}
+        <div className="lg:col-span-2 space-y-6">
+
+          {/* Company Profile */}
+          <div className={card}>
+            <div className="px-6 py-4 border-b border-border bg-muted/20 flex items-center gap-3">
+              <Building2 className="w-4 h-4 text-muted-foreground/60" />
+              <div><h2 className="font-bold text-base">Company Profile</h2><p className="text-xs text-muted-foreground">Assessment metadata</p></div>
+            </div>
+            <div className="p-6 grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
+              <ProfileField icon={<Building2 className="w-4 h-4" />} label="Company"          value={assessment?.companyName} />
+              <ProfileField icon={<Building2 className="w-4 h-4" />} label="Site"             value={siteProfile?.siteName} />
+              <ProfileField icon={<MapPin className="w-4 h-4" />}    label="Location"         value={siteProfile?.location} />
+              <ProfileField icon={<Package className="w-4 h-4" />}   label="Industry"         value={assessment?.industry} />
+              <ProfileField icon={<Package className="w-4 h-4" />}   label="Sub-Sector"       value={siteProfile?.subSector} />
+              <ProfileField icon={<Users className="w-4 h-4" />}     label="Employees"        value={siteProfile?.employeeCount} />
+              <ProfileField icon={<Building2 className="w-4 h-4" />} label="Production Area"  value={siteProfile?.productionArea ? `${siteProfile.productionArea} m²` : undefined} />
+              <ProfileField icon={<Package className="w-4 h-4" />}   label="Products"         value={siteProfile?.productsManufactured} />
+              <ProfileField icon={<User className="w-4 h-4" />}      label="Assessor (CCA)"   value={siteProfile?.assessorName} />
+            </div>
+          </div>
+
+          {/* 4 Building Blocks */}
+          <div className={card}>
+            <div className="px-6 py-4 border-b border-border bg-muted/20 flex items-center gap-3">
+              <LayoutGrid className="w-4 h-4 text-muted-foreground/60" />
+              <div><h2 className="font-bold text-base">4 Building Blocks</h2><p className="text-xs text-muted-foreground">ESG performance by framework pillar</p></div>
+            </div>
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {blockData.map(({ block, avg, dims, scored }) => {
+                const colorCls = BLOCK_COLORS[block] ?? "text-primary bg-primary/10 border-primary/20";
+                const pct = (avg / 5) * 100;
+                const lowestDims = dims.map((d, i) => ({ d, s: scored[i] })).sort((a, b) => a.s - b.s).slice(0, 3);
+                return (
+                  <div key={block} className={`rounded-2xl border p-5 ${colorCls}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="opacity-70">{BLOCK_ICONS[block]}</span>
+                        <span className="font-bold text-sm leading-tight">{block}</span>
+                      </div>
+                      <span className="text-2xl font-bold shrink-0">{avg}</span>
+                    </div>
+                    <div className="w-full bg-black/10 rounded-full h-2 mb-2">
+                      <div className="h-2 rounded-full bg-current opacity-60 transition-all" style={{ width: `${pct}%` }} />
+                    </div>
+                    <div className="flex items-center justify-between text-xs opacity-70 mb-3">
+                      <span>{dims.length} dims · Band {Math.round(avg)}</span>
+                      <span>{MATURITY_LABELS[Math.round(avg)] ?? "—"}</span>
+                    </div>
+                    <div className="space-y-1">
+                      {lowestDims.map(({ d, s }) => (
+                        <div key={d.id} className="flex items-center justify-between text-xs bg-black/5 rounded-lg px-3 py-1.5">
+                          <span className="font-medium truncate mr-2">{d.id} · {d.name}</span>
+                          <span className="font-bold shrink-0">B{s}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Key Strengths & Gaps */}
+          <div className={card}>
+            <div className="px-6 py-4 border-b border-border bg-muted/20 flex items-center gap-3">
+              <TrendingUp className="w-4 h-4 text-muted-foreground/60" />
+              <div><h2 className="font-bold text-base">Key Strengths & Gaps</h2><p className="text-xs text-muted-foreground">Top 3 performing and 3 priority improvement areas</p></div>
+            </div>
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-green-600 mb-3">Top Performing Dimensions</p>
+                {top3.length === 0 ? <p className="text-xs text-muted-foreground italic">No scores recorded yet.</p> : (
+                  <div className="space-y-2">
+                    {top3.map(({ dim, score }) => (
+                      <div key={dim.id} className="flex items-center gap-3 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+                        <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${score >= 4 ? "bg-green-500 text-white" : "bg-green-200 text-green-800"}`}>{score}</span>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-foreground truncate">{dim.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{dim.id} · {MATURITY_LABELS[score]}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-red-500 mb-3">Priority Improvement Areas</p>
+                {bot3.length === 0 ? <p className="text-xs text-muted-foreground italic">No scores recorded yet.</p> : (
+                  <div className="space-y-2">
+                    {bot3.map(({ dim, score }) => (
+                      <div key={dim.id} className="flex items-center gap-3 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+                        <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${score <= 1 ? "bg-red-500 text-white" : "bg-red-200 text-red-800"}`}>{score}</span>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-foreground truncate">{dim.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{dim.id} · {MATURITY_LABELS[score]}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 24-Dimension Scorecard */}
+          <div className={card}>
+            <div className="px-6 py-4 border-b border-border bg-muted/20 flex items-center gap-3">
+              <BarChart3 className="w-4 h-4 text-muted-foreground/60" />
+              <div><h2 className="font-bold text-base">24-Dimension Scorecard</h2><p className="text-xs text-muted-foreground">All COSIRI dimensions with industry benchmarks</p></div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50">
+                  <tr className="border-b border-border">
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Dim</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Dimension</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground hidden lg:table-cell">Block</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Band</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Maturity</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Ind. Avg</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">vs Peers</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {COSIRI_DATA.map((dim, idx) => {
+                    const s  = scoreMap[dim.id] ?? 0;
+                    const ia = benchmark.avg[idx] ?? 2.0;
+                    const gap = ia - s;
+                    const vsInd = gap < -0.3 ? "above" : gap > 0.3 ? "below" : "at";
+                    return (
+                      <tr key={dim.id} className="hover:bg-muted/20 transition-colors">
+                        <td className="px-4 py-3 font-bold text-muted-foreground text-xs">{dim.id}</td>
+                        <td className="px-4 py-3 font-medium text-foreground text-xs max-w-[180px]">{dim.name}</td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground hidden lg:table-cell">{dim.block}</td>
+                        <td className="px-4 py-3 text-center"><ScoreBadge score={s} /></td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                            s >= 4 ? "bg-green-50 text-green-700 border-green-200" :
+                            s >= 2 ? "bg-blue-50 text-blue-700 border-blue-200" :
+                            "bg-slate-100 text-slate-500 border-slate-200"
+                          }`}>{MATURITY_LABELS[s] ?? "—"}</span>
+                        </td>
+                        <td className="px-4 py-3 text-center text-xs text-muted-foreground font-medium">{ia.toFixed(1)}</td>
+                        <td className="px-4 py-3 text-center">
+                          {vsInd === "above" && <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-50 text-green-700 border border-green-200">▲ Above</span>}
+                          {vsInd === "at"    && <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">◆ At Avg</span>}
+                          {vsInd === "below" && <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200">▼ Below</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>{/* end LEFT */}
+
+        {/* ── RIGHT SIDEBAR 1/3 ── */}
+        <div className="space-y-6">
+
+          {/* Star Emblem */}
+          <div className={card}>
+            <div className="px-5 py-3 border-b border-border bg-amber-50/60">
+              <h2 className="font-bold text-sm flex items-center gap-2"><Award className="w-4 h-4 text-amber-500" /> COSIRI Star Emblem</h2>
+            </div>
+            <div className="p-5">
+              <div className="flex flex-col items-center text-center mb-5">
+                <div className="flex gap-1 mb-3">
+                  {[1,2,3,4,5].map(i => (
+                    <Star key={i} className={`w-8 h-8 ${i <= starCount ? "fill-amber-400 text-amber-400" : "text-slate-200 fill-slate-100"}`} />
+                  ))}
+                </div>
+                <p className="font-bold text-sm text-amber-700">{EMBLEM_LABELS[maturityBand]?.label ?? "—"}</p>
+                <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{EMBLEM_LABELS[maturityBand]?.desc}</p>
+                <div className="mt-3 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-700 font-medium">
+                  Valid until: {validUntil.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                </div>
+              </div>
+              {maturityBand < 5 && (
+                <div className="border-t border-border pt-4">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3" /> Next Milestone
+                  </p>
+                  <div className="flex gap-1 mb-2">
+                    {[1,2,3,4,5].map(i => (
+                      <Star key={i} className={`w-5 h-5 ${i <= nextStar ? "fill-amber-300 text-amber-300" : "text-slate-200 fill-slate-100"}`} />
+                    ))}
+                  </div>
+                  <p className="text-xs font-semibold text-foreground">{EMBLEM_LABELS[nextStar]?.label}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Raise combined score by <strong>{neededImprovement} band points</strong> across 24 dimensions.</p>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {tierData.slice(0, 4).map(d => (
+                      <span key={d.dim.id} className="px-2 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">{d.dim.id}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Score Distribution */}
+          <div className={card}>
+            <div className="px-5 py-3 border-b border-border bg-muted/20">
+              <h2 className="font-bold text-sm flex items-center gap-2"><BarChart3 className="w-4 h-4 text-muted-foreground/60" /> Score Distribution</h2>
+              <p className="text-xs text-muted-foreground">Across 24 COSIRI dimensions</p>
+            </div>
+            <div className="p-5 space-y-2.5">
+              {[5,4,3,2,1,0].map(band => {
+                const count = COSIRI_DATA.filter(d => (scoreMap[d.id] ?? 0) === band).length;
+                const pct   = (count / 24) * 100;
+                const clr   = band >= 4 ? "bg-green-400" : band >= 2 ? "bg-blue-400" : "bg-slate-300";
+                return (
+                  <div key={band} className="flex items-center gap-2 text-xs">
+                    <span className="w-7 text-muted-foreground font-bold shrink-0">B{band}</span>
+                    <div className="flex-1 bg-muted rounded-full h-2">
+                      <div className={`${clr} h-2 rounded-full transition-all`} style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="w-5 text-right font-bold text-foreground">{count}</span>
+                    <span className="w-20 text-muted-foreground/60 text-[10px] truncate">{bandLabel[band]}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* GHG Profile */}
+          <div className={card}>
+            <div className="px-5 py-3 border-b border-border bg-green-50/60">
+              <h2 className="font-bold text-sm flex items-center gap-2"><Leaf className="w-4 h-4 text-green-600" /> GHG Emissions Profile</h2>
+              <p className="text-xs text-muted-foreground">D9 · Scope 1, 2 & 3</p>
+            </div>
+            <div className="p-5">
+              <div className="flex items-center gap-4 mb-3">
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold shrink-0 ${
+                  ghgScore >= 4 ? "bg-green-100 text-green-700" : ghgScore >= 2 ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600"
+                }`}>{ghgScore}</div>
+                <div>
+                  <p className="font-bold text-sm">Band {ghgScore}</p>
+                  <p className="text-xs text-primary font-medium">{ghgBand?.title}</p>
+                  <div className="w-full bg-muted rounded-full h-1.5 mt-1.5">
+                    <div className={`h-1.5 rounded-full ${ghgScore >= 4 ? "bg-green-400" : ghgScore >= 2 ? "bg-blue-400" : "bg-slate-300"}`} style={{ width: `${(ghgScore / 5) * 100}%` }} />
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">{ghgDescriptors[ghgScore]}</p>
+            </div>
+          </div>
+
+          {/* Industry Positioning */}
+          <div className={card}>
+            <div className="px-5 py-3 border-b border-border bg-muted/20">
+              <h2 className="font-bold text-sm flex items-center gap-2"><Target className="w-4 h-4 text-muted-foreground/60" /> Industry Positioning</h2>
+            </div>
+            <div className="p-5">
+              <p className="text-5xl font-bold text-foreground mb-0.5">{percentileEst}<span className="text-xl text-muted-foreground">th</span></p>
+              <p className="text-xs text-muted-foreground mb-4">Estimated percentile · {industry || "your industry"}</p>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between items-center py-1.5 border-b border-border">
+                  <span className="text-green-600 font-medium">▲ Above avg</span>
+                  <span className="font-bold text-foreground">{aboveAvg} dims</span>
+                </div>
+                <div className="flex justify-between items-center py-1.5 border-b border-border">
+                  <span className="text-blue-600 font-medium">◆ At avg</span>
+                  <span className="font-bold text-foreground">{atAvg} dims</span>
+                </div>
+                <div className="flex justify-between items-center py-1.5">
+                  <span className="text-red-500 font-medium">▼ Below avg</span>
+                  <span className="font-bold text-foreground">{belowAvg} dims</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>{/* end RIGHT */}
+      </div>{/* end two-column grid */}
+
+      {/* ════════════════════════════════════════════
+          FULL-WIDTH — AI INSIGHTS & PRIORITISATION
+      ════════════════════════════════════════════ */}
+
+      {/* Executive Summary */}
+      <div className={`${card} mb-6`}>
+        <SectionHeader num={1} icon={<FileText className="w-4 h-4" />} title="Executive Summary" subtitle="AI-generated leadership snapshot" />
         <AiSection type="executive_summary" label="Executive Summary" insights={insights as any} onGenerate={handleGenerate} generating={generating} />
       </div>
 
-      {/* ═══════════════════════════════════════
-          SECTION 3 — Overall Score & Star Rating
-      ═══════════════════════════════════════ */}
-      <div className={card}>
-        <SectionHeader num={3} icon={<Star className="w-4 h-4" />} title="Overall Score & Star Rating" subtitle="Top-line result" />
-        <div className="p-6">
-          {/* BUG 1-5 FIX: overallScore is stored as Math.round(avg × 10), e.g. 31 for a 3.1 avg.
-              All Section 3 variables are scoped here — no other section is modified. */}
-          {(() => {
-            // BUG 1 — correct average: divide raw stored value by 10 → true 0–5 float
-            const s3Score = parseFloat((overallScore / 10).toFixed(1));
-
-            // BUG 3 — stars from corrected average (Math.round → 0–5 integer)
-            const s3Stars = Math.round(s3Score);
-
-            // BUG 2 — getMaturityBand: map corrected 0–5 float → band integer 0–5
-            const s3Band: number =
-              s3Score <= 0   ? 0 :
-              s3Score <= 1.0 ? 1 :
-              s3Score <= 2.0 ? 2 :
-              s3Score <= 3.0 ? 3 :
-              s3Score <= 4.0 ? 4 : 5;
-            const s3BandDesc = BAND_DESCRIPTIONS[s3Band];
-
-            // BUG 4 — Key Criteria: top 3 (strengths) and bottom 3 (gaps) from dimension answers
-            const s3AllScored = COSIRI_DATA
-              .map(d => ({ dim: d, score: scoreMap[d.id] ?? 0 }))
-              .filter(d => d.score > 0)
-              .sort((a, b) => b.score - a.score);
-            const s3Top3 = s3AllScored.slice(0, 3);
-            const s3Bot3 = [...s3AllScored].reverse().slice(0, 3);
-
-            // BUG 5 — band labels for distribution tooltip/legend
-            const bandLabel: Record<number, string> = {
-              5: "Leader", 4: "Advanced", 3: "Intermediate",
-              2: "Developing", 1: "Beginner", 0: "None",
-            };
-
-            return (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                {/* Card 1 — Star Rating (BUG 1 + BUG 3) */}
-                <div className="flex flex-col items-center justify-center text-center bg-gradient-to-b from-amber-50 to-white border border-amber-100 rounded-2xl p-6">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">COSIRI Star Rating</p>
-                  <div className="flex gap-1 mb-3">
-                    {[1, 2, 3, 4, 5].map(i => (
-                      <Star key={i} className={`w-9 h-9 ${i <= s3Stars ? "fill-amber-400 text-amber-400" : "text-slate-200 fill-slate-100"}`} />
-                    ))}
-                  </div>
-                  <p className="text-3xl font-bold text-foreground">
-                    {s3Score}<span className="text-lg text-muted-foreground">/5</span>
-                  </p>
-                  <p className="text-sm font-semibold text-amber-600 mt-1">
-                    {MATURITY_LABELS[s3Band] ?? "—"}
-                  </p>
-                </div>
-
-                {/* Card 2 — Maturity Band + Key Criteria (BUG 2 + BUG 4) */}
-                <div className="bg-muted/30 border border-border rounded-2xl p-6 flex flex-col">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Maturity Band</p>
-                  <p className="text-2xl font-bold text-foreground mb-0.5">
-                    Band {s3Band} — {s3BandDesc?.title}
-                  </p>
-                  <p className="text-xs text-muted-foreground leading-relaxed mb-3">{s3BandDesc?.summary}</p>
-                  <div className="mt-auto pt-3 border-t border-border">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Key Criteria</p>
-                    {s3AllScored.length === 0 ? (
-                      <p className="text-xs text-muted-foreground italic">No dimension scores available yet.</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {s3Top3.length > 0 && (
-                          <div>
-                            <p className="text-[10px] font-semibold text-green-600 uppercase tracking-wider mb-1.5">Strengths</p>
-                            <div className="space-y-1">
-                              {s3Top3.map(({ dim, score }) => (
-                                <p key={dim.id} className="text-xs text-foreground flex items-start gap-1.5 leading-snug">
-                                  <span className="shrink-0">✅</span>
-                                  <span>
-                                    <span className="font-medium">{dim.name}</span>
-                                    {" — "}{MATURITY_LABELS[score] ?? "—"} ({score}/5)
-                                  </span>
-                                </p>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {s3Bot3.length > 0 && (
-                          <div>
-                            <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wider mb-1.5">Areas for Improvement</p>
-                            <div className="space-y-1">
-                              {s3Bot3.map(({ dim, score }) => (
-                                <p key={dim.id} className="text-xs text-foreground flex items-start gap-1.5 leading-snug">
-                                  <span className="shrink-0">⚠️</span>
-                                  <span>
-                                    <span className="font-medium">{dim.name}</span>
-                                    {" — "}{MATURITY_LABELS[score] ?? "—"} ({score}/5)
-                                  </span>
-                                </p>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Card 3 — Score Distribution (BUG 5: band labels from corrected mapping) */}
-                <div className="bg-muted/30 border border-border rounded-2xl p-6">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">
-                    Score Distribution (24 dimensions)
-                  </p>
-                  <div className="space-y-2.5">
-                    {[5, 4, 3, 2, 1, 0].map(band => {
-                      // BUG 5: use exact integer band stored per dimension (0–5, stored correctly)
-                      const count = COSIRI_DATA.filter(d => (scoreMap[d.id] ?? 0) === band).length;
-                      const pct = (count / 24) * 100;
-                      const clr = band >= 4 ? "bg-green-400" : band >= 2 ? "bg-blue-400" : "bg-slate-300";
-                      return (
-                        <div
-                          key={band}
-                          className="flex items-center gap-2 text-xs"
-                          title={`Band ${band} — ${bandLabel[band]}: ${count} dimension${count !== 1 ? "s" : ""}`}
-                        >
-                          <span className="w-7 text-muted-foreground font-bold shrink-0">B{band}</span>
-                          <div className="flex-1 bg-muted rounded-full h-2">
-                            <div className={`${clr} h-2 rounded-full transition-all`} style={{ width: `${pct}%` }} />
-                          </div>
-                          <span className="w-5 text-right font-bold text-foreground">{count}</span>
-                          <span className="w-20 text-muted-foreground/60 text-[10px] hidden sm:block truncate">
-                            {bandLabel[band]}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <p className="text-[10px] text-muted-foreground mt-3 pt-3 border-t border-border">
-                    Hover each bar for full label · Bands mapped via getMaturityBand()
-                  </p>
-                </div>
-
-              </div>
-            );
-          })()}
-        </div>
+      {/* Gap Analysis */}
+      <div className={`${card} mb-6`}>
+        <SectionHeader num={2} icon={<Target className="w-4 h-4" />} title="Gap Analysis" subtitle="Key gaps and strategic priorities" />
+        <AiSection type="gap_analysis" label="Gap Analysis" insights={insights as any} onGenerate={handleGenerate} generating={generating} />
       </div>
 
-      {/* ═══════════════════════════════════════
-          SECTION 4 — 4 Building Blocks
-      ═══════════════════════════════════════ */}
-      <div className={card}>
-        <SectionHeader num={4} icon={<LayoutGrid className="w-4 h-4" />} title="4 Building Blocks" subtitle="Core ESG performance by framework pillar" />
-        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {blockData.map(({ block, avg, dims, scored }) => {
-            const colorCls = BLOCK_COLORS[block] ?? "text-primary bg-primary/10 border-primary/20";
-            const pct = (avg / 5) * 100;
-            const lowestDims = dims
-              .map((d, i) => ({ d, s: scored[i] }))
-              .sort((a, b) => a.s - b.s)
-              .slice(0, 3);
-            return (
-              <div key={block} className={`rounded-2xl border p-5 ${colorCls}`}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="opacity-70">{BLOCK_ICONS[block]}</span>
-                    <span className="font-bold text-sm">{block}</span>
-                  </div>
-                  <span className="text-2xl font-bold">{avg}</span>
-                </div>
-                {/* Progress bar */}
-                <div className="w-full bg-black/10 rounded-full h-2 mb-3">
-                  <div className="h-2 rounded-full bg-current opacity-60 transition-all" style={{ width: `${pct}%` }} />
-                </div>
-                <div className="flex items-center justify-between text-xs opacity-70 mb-3">
-                  <span>{dims.length} dimensions · Band {Math.round(avg)}</span>
-                  <span>{MATURITY_LABELS[Math.round(avg)] ?? "—"}</span>
-                </div>
-                {/* Lowest 3 dims */}
-                <div className="space-y-1">
-                  {lowestDims.map(({ d, s }) => (
-                    <div key={d.id} className="flex items-center justify-between text-xs bg-black/5 rounded-lg px-3 py-1.5">
-                      <span className="font-medium">{d.id} · {d.name}</span>
-                      <span className="font-bold">Band {s}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ═══════════════════════════════════════
-          SECTION 5 — GHG Emissions Profile
-      ═══════════════════════════════════════ */}
-      <div className={card}>
-        <SectionHeader num={5} icon={<Leaf className="w-4 h-4" />} title="GHG Emissions Profile" subtitle="Environmental footprint — Dimension D9: GHG Emissions (Scope 1, 2 & 3)" />
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Score dial */}
-            <div className="flex flex-col items-center justify-center text-center bg-gradient-to-b from-green-50 to-white border border-green-100 rounded-2xl p-6">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">D9 — GHG Score</p>
-              <div className={`w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold mb-3 ${
-                ghgScore >= 4 ? "bg-green-100 text-green-700" : ghgScore >= 2 ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600"
-              }`}>
-                {ghgScore}
-              </div>
-              <p className="text-base font-bold text-foreground">Band {ghgScore}</p>
-              <p className="text-sm text-primary font-semibold mt-0.5">{ghgBand?.title}</p>
-              <div className="mt-3 w-full bg-muted rounded-full h-2">
-                <div
-                  className={`h-2 rounded-full ${ghgScore >= 4 ? "bg-green-400" : ghgScore >= 2 ? "bg-blue-400" : "bg-slate-300"}`}
-                  style={{ width: `${(ghgScore / 5) * 100}%` }}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1.5">{ghgScore}/5 · {MATURITY_LABELS[ghgScore]}</p>
-            </div>
-            {/* Scope description */}
-            <div className="md:col-span-2 bg-muted/30 border border-border rounded-2xl p-6 space-y-4">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Current Scope Coverage</p>
-                <p className="text-sm text-foreground leading-relaxed">{ghgDescriptors[ghgScore]}</p>
-              </div>
-              <div className="border-t border-border pt-4">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">GHG Scope Maturity Progression</p>
-                <div className="space-y-2">
-                  {[0, 1, 2, 3, 4, 5].map(band => (
-                    <div key={band} className={`flex items-start gap-3 text-xs rounded-lg px-3 py-2 ${band === ghgScore ? "bg-primary/10 border border-primary/20" : ""}`}>
-                      <span className={`font-bold shrink-0 ${band === ghgScore ? "text-primary" : "text-muted-foreground"}`}>B{band}</span>
-                      <span className={band === ghgScore ? "text-foreground font-medium" : "text-muted-foreground"}>{ghgDescriptors[band]}</span>
-                      {band === ghgScore && <span className="shrink-0 text-[10px] font-bold text-primary">← Current</span>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+      {/* Peer Benchmarking */}
+      <div className={`${card} mb-6`}>
+        <div className="px-6 py-4 border-b border-border bg-muted/20 flex items-center gap-3">
+          <span className="w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center border border-primary/20 shrink-0">3</span>
+          <span className="text-muted-foreground/60"><Target className="w-4 h-4" /></span>
+          <div>
+            <h2 className="font-bold text-base">Peer Benchmarking</h2>
+            <p className="text-xs text-muted-foreground">Competitive positioning within {industry || "your industry"}</p>
           </div>
         </div>
-      </div>
-
-      {/* ═══════════════════════════════════════
-          SECTION 6 — 24-Dimension Scorecard
-      ═══════════════════════════════════════ */}
-      <div className={card}>
-        <SectionHeader num={6} icon={<BarChart3 className="w-4 h-4" />} title="24-Dimension Scorecard" subtitle="Detailed findings across all COSIRI dimensions" />
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50">
-              <tr className="border-b border-border">
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Dim</th>
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Dimension</th>
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Building Block</th>
-                <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Band</th>
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Maturity Level</th>
-                <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Ind. Avg</th>
-                <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">vs Peers</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {COSIRI_DATA.map((dim, idx) => {
-                const s = scoreMap[dim.id] ?? 0;
-                const ia = benchmark.avg[idx] ?? 2.0;
-                const gap = ia - s;
-                const vsInd = gap < -0.3 ? "above" : gap > 0.3 ? "below" : "at";
-                return (
-                  <tr key={dim.id} className="hover:bg-muted/20 transition-colors">
-                    <td className="px-4 py-3 font-bold text-muted-foreground text-xs">{dim.id}</td>
-                    <td className="px-4 py-3 font-medium text-foreground text-xs max-w-[180px]">{dim.name}</td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{dim.block}</td>
-                    <td className="px-4 py-3 text-center"><ScoreBadge score={s} /></td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                        s >= 4 ? "bg-green-50 text-green-700 border-green-200" :
-                        s >= 2 ? "bg-blue-50 text-blue-700 border-blue-200" :
-                        "bg-slate-100 text-slate-500 border-slate-200"
-                      }`}>
-                        {MATURITY_LABELS[s] ?? "—"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center text-xs text-muted-foreground font-medium">{ia.toFixed(1)}</td>
-                    <td className="px-4 py-3 text-center">
-                      {vsInd === "above" && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-50 text-green-700 border border-green-200">▲ Above</span>}
-                      {vsInd === "at" && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">◆ At Avg</span>}
-                      {vsInd === "below" && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200">▼ Below</span>}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* ═══════════════════════════════════════
-          SECTION 7 — Peer Benchmarking
-      ═══════════════════════════════════════ */}
-      <div className={card}>
-        <SectionHeader num={7} icon={<Target className="w-4 h-4" />} title="Peer Benchmarking" subtitle={`Competitive positioning within ${industry || "your industry"}`} />
-        {/* Inline summary stats */}
-        <div className="px-6 pt-5 grid grid-cols-3 gap-4 mb-0">
+        <div className="px-6 pt-5 grid grid-cols-3 gap-4">
           <div className="bg-muted/30 border border-border rounded-xl p-4 text-center">
             <p className="text-3xl font-bold text-foreground">{percentileEst}<span className="text-base text-muted-foreground">th</span></p>
-            <p className="text-xs text-muted-foreground mt-1">Estimated percentile</p>
+            <p className="text-xs text-muted-foreground mt-1">Est. percentile</p>
           </div>
           <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
             <p className="text-3xl font-bold text-green-700">{aboveAvg}</p>
-            <p className="text-xs text-green-600 mt-1">Dimensions above avg</p>
+            <p className="text-xs text-green-600 mt-1">Above industry avg</p>
           </div>
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
             <p className="text-3xl font-bold text-red-700">{belowAvg}</p>
-            <p className="text-xs text-red-600 mt-1">Dimensions below avg</p>
+            <p className="text-xs text-red-600 mt-1">Below industry avg</p>
           </div>
         </div>
         <AiSection type="benchmarking" label="Peer Benchmarking Analysis" insights={insights as any} onGenerate={handleGenerate} generating={generating} />
       </div>
 
-      {/* ═══════════════════════════════════════
-          SECTION 8 — Prioritisation Matrix
-      ═══════════════════════════════════════ */}
-      <div className={card}>
-        <SectionHeader num={8} icon={<Target className="w-4 h-4" />} title="Prioritisation Matrix" subtitle="Where to focus first — TIER framework (Theme · Impact · Effort · Relevance)" />
-        {/* Compact tier summary */}
+      {/* Prioritisation Matrix */}
+      <div className={`${card} mb-6`}>
+        <SectionHeader num={4} icon={<Target className="w-4 h-4" />} title="Prioritisation Matrix" subtitle="TIER framework — Theme · Impact · Effort · Relevance" />
         <div className="px-6 pt-5">
           <div className="flex flex-wrap gap-2 mb-4">
             {(["Tier 1", "Tier 2", "Tier 3", "Tier 4"] as const).map(t => {
@@ -649,7 +704,6 @@ export default function CosiriReport() {
               );
             })}
           </div>
-          {/* Top-8 priority table */}
           <div className="overflow-x-auto mb-0 rounded-xl border border-border">
             <table className="w-full text-xs">
               <thead className="bg-muted/50">
@@ -680,7 +734,7 @@ export default function CosiriReport() {
                       </div>
                     </td>
                     <td className="px-3 py-2.5 text-center">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${TIER_COLORS[tier]}`}>{tier}</span>
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${TIER_COLORS[tier]}`}>{tier}</span>
                     </td>
                   </tr>
                 ))}
@@ -691,94 +745,13 @@ export default function CosiriReport() {
         <AiSection type="tier_matrix" label="TIER Prioritisation Analysis" insights={insights as any} onGenerate={handleGenerate} generating={generating} />
       </div>
 
-      {/* ═══════════════════════════════════════
-          SECTION 9 — Transformation Roadmap
-      ═══════════════════════════════════════ */}
-      <div className={card}>
-        <SectionHeader num={9} icon={<TrendingUp className="w-4 h-4" />} title="Transformation Roadmap" subtitle="What to do next — phased improvement plan" />
+      {/* Transformation Roadmap */}
+      <div className={`${card} mb-8`}>
+        <SectionHeader num={5} icon={<TrendingUp className="w-4 h-4" />} title="Transformation Roadmap" subtitle="Phased improvement plan — what to do next" />
         <AiSection type="transformation_roadmap" label="Transformation Roadmap" insights={insights as any} onGenerate={handleGenerate} generating={generating} />
       </div>
 
-      {/* ═══════════════════════════════════════
-          SECTION 10 — Star Emblem Details
-      ═══════════════════════════════════════ */}
-      <div className={card}>
-        <SectionHeader num={10} icon={<Award className="w-4 h-4" />} title="Star Emblem Details" subtitle="Certification outcome and next milestone" />
-        <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Current emblem */}
-          <div className="flex flex-col items-center text-center bg-gradient-to-b from-amber-50 to-white border border-amber-100 rounded-2xl p-6">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">Currently Qualifies For</p>
-            <div className="flex gap-1 mb-3">
-              {[1, 2, 3, 4, 5].map(i => (
-                <Star key={i} className={`w-8 h-8 ${i <= overallScore ? "fill-amber-400 text-amber-400" : "text-slate-200 fill-slate-100"}`} />
-              ))}
-            </div>
-            <p className="text-lg font-bold text-amber-600">{EMBLEM_LABELS[overallScore]?.label}</p>
-            <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{EMBLEM_LABELS[overallScore]?.desc}</p>
-            <div className="mt-4 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 font-medium">
-              Valid until: {validUntil.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
-            </div>
-          </div>
-
-          {/* Next milestone */}
-          {overallScore < 5 ? (
-            <div className="flex flex-col bg-muted/30 border border-border rounded-2xl p-6">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
-                <TrendingUp className="w-3.5 h-3.5" /> Next Milestone
-              </p>
-              <div className="flex gap-1 mb-3">
-                {[1, 2, 3, 4, 5].map(i => (
-                  <Star key={i} className={`w-6 h-6 ${i <= nextStar ? "fill-amber-300 text-amber-300" : "text-slate-200 fill-slate-100"}`} />
-                ))}
-              </div>
-              <p className="text-base font-bold text-foreground">{EMBLEM_LABELS[nextStar]?.label}</p>
-              <p className="text-xs text-muted-foreground mt-1 mb-4">{MATURITY_LABELS[nextStar]} level required</p>
-              <p className="text-xs text-muted-foreground">
-                Raise combined score by <strong>{neededImprovement} band point{neededImprovement !== 1 ? "s" : ""}</strong> across 24 dimensions to reach average Band {nextStar}.
-              </p>
-              <div className="mt-3">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Priority dimensions:</p>
-                <div className="flex flex-wrap gap-1">
-                  {tierData.slice(0, 4).map(d => (
-                    <span key={d.dim.id} className="px-2 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">{d.dim.id}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center bg-green-50 border border-green-200 rounded-2xl p-6 text-center">
-              <Award className="w-12 h-12 text-green-600 mb-3" />
-              <p className="text-lg font-bold text-green-700">Maximum Emblem Achieved!</p>
-              <p className="text-xs text-green-600 mt-2">You hold the 5-Star COSIRI Emblem — an industry-leading sustainability position.</p>
-            </div>
-          )}
-
-          {/* Industry positioning */}
-          <div className="flex flex-col bg-muted/30 border border-border rounded-2xl p-6">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
-              <BarChart3 className="w-3.5 h-3.5" /> Industry Positioning
-            </p>
-            <p className="text-4xl font-bold text-foreground mb-1">{percentileEst}<span className="text-lg text-muted-foreground">th</span></p>
-            <p className="text-xs text-muted-foreground mb-4">Estimated percentile within {industry || "your industry"}</p>
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between items-center py-1.5 border-b border-border">
-                <span className="text-green-600 font-medium">▲ Above industry avg</span>
-                <span className="font-bold text-foreground">{aboveAvg} dimensions</span>
-              </div>
-              <div className="flex justify-between items-center py-1.5 border-b border-border">
-                <span className="text-blue-600 font-medium">◆ At industry avg</span>
-                <span className="font-bold text-foreground">{atAvg} dimensions</span>
-              </div>
-              <div className="flex justify-between items-center py-1.5">
-                <span className="text-red-500 font-medium">▼ Below industry avg</span>
-                <span className="font-bold text-foreground">{belowAvg} dimensions</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Evidence Summary (bonus section) ── */}
+      {/* ────── Appendix: Evidence ────── */}
       {allEvidence.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
@@ -790,10 +763,10 @@ export default function CosiriReport() {
           </div>
           <div className="space-y-4">
             {COSIRI_DATA.filter(dim => evidenceByDimension[dim.id]?.length > 0).map(dim => {
-              const files = evidenceByDimension[dim.id];
+              const files    = evidenceByDimension[dim.id];
               const analysed = files.filter(f => f.summaryStatus === "completed" && f.aiSummary);
               return (
-                <div key={dim.id} className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+                <div key={dim.id} className={card}>
                   <div className="px-6 py-4 border-b border-border bg-muted/20 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">{dim.id}</span>
@@ -833,6 +806,7 @@ export default function CosiriReport() {
           </div>
         </div>
       )}
+
     </AppLayout>
   );
 }
