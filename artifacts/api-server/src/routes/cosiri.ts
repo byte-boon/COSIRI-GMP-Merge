@@ -154,6 +154,70 @@ DIMENSION SCORES:
 {{dimensionSummary}}
 
 Create a 3-5 year maturity progression: Year 1 (Foundation), Year 2 (Integration), Year 3 (Optimization), Years 4-5 (Leadership). For each phase include target maturity levels, sequenced initiatives, governance recommendations, KPI suggestions. Use markdown. Prioritize largest gaps.`,
+
+  benchmarking: `You are a sustainability benchmarking analyst producing an industry peer comparison report based on COSIRI assessment results.
+
+Company: {{companyName}} | Industry: {{industry}} | Overall COSIRI Index: {{overallScore}}/5.0
+
+DIMENSION SCORES:
+{{dimensionSummary}}
+
+TOP 5 WEAKEST AREAS:
+{{weakestAreas}}
+
+TOP 5 STRONGEST AREAS:
+{{strongestAreas}}
+
+Write a professional benchmarking analysis (400-600 words) covering: how the company compares to typical industry peers, which dimensions are likely above/at/below the industry average for {{industry}}, what the best-in-class performers in {{industry}} do differently, percentile positioning estimate, and 3-4 specific recommendations to close the gap with industry leaders. Use markdown with clear headers. Frame insights in the context of {{industry}} sector norms.`,
+
+  tier_matrix: `You are a COSIRI sustainability prioritisation expert applying the TIER framework (Theme, Impact, Effort, Relevance) to prioritise improvement actions.
+
+Company: {{companyName}} | Industry: {{industry}} | Overall COSIRI Index: {{overallScore}}/5.0
+
+DIMENSION SCORES:
+{{dimensionSummary}}
+
+TOP 5 WEAKEST AREAS:
+{{weakestAreas}}
+
+Produce a TIER prioritisation analysis (400-600 words) covering:
+1. **Tier 1 – Urgent (High Impact, Large Gap)**: Dimensions that must be addressed immediately with rationale
+2. **Tier 2 – Important (High Impact or Large Gap)**: Near-term priority initiatives with sequencing guidance  
+3. **Tier 3 – Plan (Moderate)**: Medium-term improvements with suggested approach
+4. **Tier 4 – Maintain (At or Above Average)**: Areas to sustain and leverage as strengths
+For each tier, include: alignment with {{industry}} sector priorities, estimated effort level (Low/Medium/High), suggested owners, and KPIs. Use markdown. Consider GHG emissions and climate risk as highest impact for all industries.`,
+
+  transformation_roadmap: `You are a sustainability transformation consultant creating a detailed multi-horizon transformation roadmap for a COSIRI-assessed company.
+
+Company: {{companyName}} | Industry: {{industry}} | Overall COSIRI Index: {{overallScore}}/5.0
+
+DIMENSION SCORES:
+{{dimensionSummary}}
+
+TOP 5 WEAKEST AREAS:
+{{weakestAreas}}
+
+Create a structured Transformation Roadmap across three horizons:
+
+**Horizon 1 – Short-Term (0–12 months): Quick Wins & Foundations**
+- Governance and accountability structures
+- Data collection and baseline setting
+- Quick compliance wins
+- Specific initiatives with owners and KPIs
+
+**Horizon 2 – Medium-Term (1–3 years): Systemic Integration**
+- Process embedding and system integration
+- Supply chain engagement
+- Technology investments
+- Milestone targets per building block
+
+**Horizon 3 – Long-Term (3–5 years, toward Net-Zero): Leadership Position**
+- Circular economy and lifecycle innovation
+- Net-zero pathway alignment
+- Industry leadership and external recognition
+- KPIs aligned with science-based targets
+
+For each initiative, include: recommended solutions/technologies, estimated resource level, and measurable KPIs. Use markdown. Tailor to {{industry}} sector priorities.`,
 };
 
 router.post("/cosiri/assessments/:id/ai/generate", async (req, res) => {
@@ -162,8 +226,9 @@ router.post("/cosiri/assessments/:id/ai/generate", async (req, res) => {
     if (isNaN(assessmentId)) return res.status(400).json({ error: "Invalid id" });
 
     const { type } = req.body as { type: string };
-    if (!["executive_summary", "gap_analysis", "roadmap"].includes(type)) {
-      return res.status(400).json({ error: "Invalid type. Must be executive_summary, gap_analysis, or roadmap" });
+    const validTypes = ["executive_summary", "gap_analysis", "roadmap", "benchmarking", "tier_matrix", "transformation_roadmap"];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ error: `Invalid type. Must be one of: ${validTypes.join(", ")}` });
     }
 
     const [assessment] = await db.select().from(cosiriAssessments).where(eq(cosiriAssessments.id, assessmentId));

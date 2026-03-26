@@ -110,3 +110,61 @@ export const COSIRI_DATA: CosiriDimension[] = [
   { id: "D23", block: "Organisation & Governance", pillar: "Governance", name: "External Communication", description: "Reporting and stakeholder engagement.", question: "How is sustainability communicated?", options: createBands('Communication') },
   { id: "D24", block: "Organisation & Governance", pillar: "Governance", name: "Governance Structure", description: "Internal structures and policies.", question: "How is sustainability governed?", options: createBands('Governance') }
 ];
+
+// D1-D24 order for all benchmark arrays
+// [Strategy,ESG,GreenBiz,Capital,PhysRisk,TransRisk,Compliance,Reputation,
+//  GHG,Resources,Waste,Pollution,Supplier,Procurement,Transport,SCPlanning,
+//  ProductDesign,Circular,TechAdoption,Transparency,Workforce,Leadership,ExtComms,Governance]
+
+export type BenchmarkEntry = { avg: number[]; bic: number[] };
+
+export const INDUSTRY_BENCHMARKS: Record<string, BenchmarkEntry> = {
+  food_beverage: {
+    avg: [2.0,1.8,1.5,1.8,2.0,1.8,2.5,2.2,2.5,2.8,2.5,2.2,1.8,2.0,1.5,1.8,1.8,1.5,1.5,1.8,2.2,2.5,2.0,2.2],
+    bic: [4.0,3.5,3.0,3.5,4.0,3.5,4.5,4.0,4.5,4.5,4.0,4.0,3.5,3.5,3.0,3.5,3.5,3.5,3.5,4.0,4.0,4.5,4.0,4.5],
+  },
+  pharmaceutical: {
+    avg: [2.5,2.5,1.8,2.0,2.2,2.5,3.5,3.0,2.0,2.2,2.0,2.5,2.0,2.2,1.8,2.0,2.0,1.8,2.0,2.5,2.5,3.0,3.0,3.5],
+    bic: [4.5,4.5,3.5,4.0,4.0,4.5,5.0,5.0,4.0,4.0,4.0,4.5,4.0,4.0,3.5,4.0,4.0,3.5,4.0,4.5,4.5,5.0,5.0,5.0],
+  },
+  consumer_goods: {
+    avg: [2.2,2.0,1.8,1.8,1.8,1.8,2.5,2.5,2.0,2.0,2.2,1.8,2.5,2.5,2.0,2.5,2.5,2.0,1.8,2.0,2.0,2.2,2.2,2.2],
+    bic: [4.0,3.5,3.5,3.5,3.5,3.5,4.5,4.5,4.0,4.0,4.0,3.5,4.5,4.5,4.0,4.5,4.5,4.0,3.5,4.0,4.0,4.0,4.0,4.0],
+  },
+  manufacturing: {
+    avg: [1.8,1.5,1.2,1.8,2.0,1.8,2.5,1.8,2.5,2.5,2.2,2.2,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.0,2.2,1.8,2.0],
+    bic: [3.5,3.5,3.0,3.5,4.0,3.5,4.5,3.5,4.5,4.5,4.0,4.0,3.5,3.5,3.5,3.5,3.5,3.5,3.5,3.5,4.0,4.0,3.5,4.0],
+  },
+  energy: {
+    avg: [2.5,2.5,2.0,2.5,3.0,3.0,3.0,2.5,3.0,2.5,2.0,2.5,2.0,2.0,2.0,2.0,1.5,1.5,2.5,2.5,2.5,3.0,2.5,3.0],
+    bic: [5.0,4.5,4.0,5.0,5.0,5.0,5.0,4.5,5.0,4.5,4.0,4.5,4.0,4.0,4.0,4.0,3.5,3.5,4.5,4.5,4.5,5.0,4.5,5.0],
+  },
+  technology: {
+    avg: [2.0,2.5,2.0,2.0,1.5,1.8,2.5,2.5,1.5,2.0,1.5,1.5,1.5,1.8,1.5,2.0,2.5,2.0,3.5,3.5,2.5,2.8,2.5,2.5],
+    bic: [4.0,4.5,4.0,4.0,3.5,3.5,4.5,4.5,3.5,4.0,3.5,3.5,3.5,3.5,3.5,4.0,4.5,4.0,5.0,5.0,4.5,4.5,4.5,4.5],
+  },
+  default: {
+    avg: [2.0,2.0,1.8,1.8,2.0,2.0,2.5,2.0,2.0,2.2,2.0,2.0,1.8,1.8,1.5,1.8,1.8,1.5,1.8,2.0,2.2,2.5,2.2,2.5],
+    bic: [4.0,4.0,3.5,3.5,4.0,4.0,4.5,4.0,4.0,4.0,4.0,4.0,3.5,3.5,3.5,3.5,3.5,3.5,4.0,4.0,4.0,4.5,4.0,4.5],
+  },
+};
+
+export function getBenchmarkKey(industry: string): string {
+  const l = industry.toLowerCase();
+  if (l.includes('food') || l.includes('beverage') || l.includes('fmcg') || l.includes('dairy') || l.includes('drink')) return 'food_beverage';
+  if (l.includes('pharma') || l.includes('health') || l.includes('medical') || l.includes('biotech') || l.includes('life science')) return 'pharmaceutical';
+  if (l.includes('consumer') || l.includes('retail') || l.includes('fashion') || l.includes('apparel') || l.includes('goods')) return 'consumer_goods';
+  if (l.includes('energy') || l.includes('oil') || l.includes('gas') || l.includes('utility') || l.includes('power') || l.includes('renewab')) return 'energy';
+  if (l.includes('tech') || l.includes('software') || l.includes('digital') || l.includes('it ') || l.includes('saas') || l.includes('telecom')) return 'technology';
+  if (l.includes('manufact') || l.includes('industrial') || l.includes('auto') || l.includes('chemical') || l.includes('aerospace') || l.includes('machin')) return 'manufacturing';
+  return 'default';
+}
+
+// Impact weights D1-D24 (1-5 scale, 5 = highest sustainability impact)
+export const DIMENSION_WEIGHTS: number[] = [
+  4, 3, 2, 2, 3, 2, 3, 2, // Strategy & Risk (D1-D8)
+  5, 4, 3, 2, 3, 2, 2, 2, // Business Processes Env + SC (D9-D16)
+  2, 3,                    // Lifecycle (D17-D18)
+  3, 3,                    // Technology (D19-D20)
+  3, 4, 2, 4,              // O&G (D21-D24)
+];

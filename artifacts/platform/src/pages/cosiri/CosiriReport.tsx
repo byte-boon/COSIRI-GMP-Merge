@@ -57,12 +57,15 @@ function StarRating({ score }: { score: number }) {
   );
 }
 
-type InsightType = "executive_summary" | "gap_analysis" | "roadmap";
+type InsightType = "executive_summary" | "gap_analysis" | "roadmap" | "benchmarking" | "tier_matrix" | "transformation_roadmap";
 
 const TABS: { key: InsightType; label: string }[] = [
   { key: "executive_summary", label: "Executive Summary" },
   { key: "gap_analysis", label: "Gap Analysis" },
   { key: "roadmap", label: "Strategic Roadmap" },
+  { key: "benchmarking", label: "Benchmarking" },
+  { key: "tier_matrix", label: "TIER Matrix" },
+  { key: "transformation_roadmap", label: "Transformation Roadmap" },
 ];
 
 export default function CosiriReport() {
