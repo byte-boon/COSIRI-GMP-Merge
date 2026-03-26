@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { X, AlertTriangle, ShieldAlert, Info, Send, CheckCircle2 } from "lucide-react";
+import { useState, useRef } from "react";
+import { X, AlertTriangle, ShieldAlert, Info, Send, CheckCircle2, Sparkles, RefreshCw } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -31,11 +31,12 @@ interface Props {
   assessmentId: number;
   itemId: string;
   itemLabel: string;
+  itemDescription?: string;
   score: number;
   onClose: () => void;
 }
 
-export default function RaiseCapaModal({ assessmentId, itemId, itemLabel, score, onClose }: Props) {
+export default function RaiseCapaModal({ assessmentId, itemId, itemLabel, itemDescription, score, onClose }: Props) {
   const defaultSeverity = scoreToSeverity(score);
   const sevCfg = SEVERITY_CONFIG[defaultSeverity];
 
@@ -43,9 +44,68 @@ export default function RaiseCapaModal({ assessmentId, itemId, itemLabel, score,
   const [type, setType] = useState(score <= 2 ? "noncompliance" : "observation");
   const [description, setDescription] = useState("");
   const [done, setDone] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const qc = useQueryClient();
 
+  // ── AI Draft via SSE streaming ──────────────────────────────────────────────
+  const generateAiDraft = async () => {
+    if (aiGenerating) {
+      abortRef.current?.abort();
+      setAiGenerating(false);
+      return;
+    }
+    setAiGenerating(true);
+    setAiError(null);
+    setDescription("");
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const res = await fetch(`${BASE}/api/gmp/generate-capa`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId, itemLabel, itemDescription, score, severity, type }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) throw new Error("Server error");
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No stream");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { value, done: streamDone } = await reader.read();
+        if (streamDone) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+          try {
+            const data = JSON.parse(line.slice(5).trim());
+            if (data.error) { setAiError(data.error); break; }
+            if (data.done) break;
+            if (data.content) setDescription(prev => prev + data.content);
+          } catch {}
+        }
+      }
+    } catch (err: unknown) {
+      if ((err as Error)?.name !== "AbortError") {
+        setAiError("AI generation failed. Please write the description manually.");
+      }
+    } finally {
+      setAiGenerating(false);
+      abortRef.current = null;
+    }
+  };
+
+  // ── Submit finding ──────────────────────────────────────────────────────────
   const { mutate: submit, isPending } = useMutation({
     mutationFn: async () => {
       const res = await fetch(`${BASE}/api/gmp/findings`, {
@@ -62,6 +122,7 @@ export default function RaiseCapaModal({ assessmentId, itemId, itemLabel, score,
     },
   });
 
+  // ── Success state ───────────────────────────────────────────────────────────
   if (done) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
@@ -82,12 +143,13 @@ export default function RaiseCapaModal({ assessmentId, itemId, itemLabel, score,
     );
   }
 
+  // ── Main modal ──────────────────────────────────────────────────────────────
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
-      <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+      <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
           <div className="flex items-center gap-2.5">
             {sevCfg.icon}
             <div>
@@ -101,7 +163,7 @@ export default function RaiseCapaModal({ assessmentId, itemId, itemLabel, score,
         </div>
 
         {/* CAPA rule banner */}
-        <div className={`mx-6 mt-5 px-4 py-3 rounded-xl border ${sevCfg.bg} ${sevCfg.border} flex items-start gap-2.5`}>
+        <div className={`mx-6 mt-5 px-4 py-3 rounded-xl border ${sevCfg.bg} ${sevCfg.border} flex items-start gap-2.5 shrink-0`}>
           <span className="mt-0.5 shrink-0">{sevCfg.icon}</span>
           <div>
             <p className={`text-xs font-bold ${sevCfg.text}`}>CAPA Rule — {SEVERITY_CONFIG[severity].label} Finding</p>
@@ -109,7 +171,9 @@ export default function RaiseCapaModal({ assessmentId, itemId, itemLabel, score,
           </div>
         </div>
 
-        <div className="p-6 space-y-5">
+        {/* Scrollable body */}
+        <div className="p-6 space-y-5 overflow-y-auto flex-1">
+
           {/* Severity selector */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Severity</label>
@@ -145,29 +209,83 @@ export default function RaiseCapaModal({ assessmentId, itemId, itemLabel, score,
             </select>
           </div>
 
-          {/* Description */}
+          {/* Description — with AI Draft button */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
-              Description <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              placeholder="Describe the non-conformance, root cause, and the corrective or preventive action required…"
-              rows={4}
-              className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none placeholder:text-muted-foreground/40"
-            />
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Description <span className="text-red-500">*</span>
+              </label>
+              <button
+                onClick={generateAiDraft}
+                disabled={isPending}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  aiGenerating
+                    ? "bg-purple-100 text-purple-700 border border-purple-300 hover:bg-purple-200"
+                    : "bg-purple-600 hover:bg-purple-700 text-white"
+                }`}
+              >
+                {aiGenerating
+                  ? <><RefreshCw className="w-3 h-3 animate-spin" /> Stop</>
+                  : <><Sparkles className="w-3 h-3" /> {description ? "Regenerate" : "AI Draft"}</>
+                }
+              </button>
+            </div>
+
+            {/* AI generating banner */}
+            {aiGenerating && !description && (
+              <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-purple-50 border border-purple-200 mb-2">
+                <RefreshCw className="w-4 h-4 text-purple-500 animate-spin shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-purple-700">AI is drafting your CAPA…</p>
+                  <p className="text-[10px] text-purple-500">Analysing GMP requirements for {itemId}</p>
+                </div>
+              </div>
+            )}
+
+            {/* AI error */}
+            {aiError && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200 mb-2">
+                <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                <p className="text-xs text-red-600">{aiError}</p>
+              </div>
+            )}
+
+            <div className="relative">
+              <textarea
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                placeholder={aiGenerating ? "" : "Describe the non-conformance, root cause, and the corrective or preventive action required… or click AI Draft to generate."}
+                rows={8}
+                className={`w-full px-3 py-2.5 rounded-xl border bg-background text-sm text-foreground outline-none transition-all resize-none placeholder:text-muted-foreground/40 ${
+                  aiGenerating
+                    ? "border-purple-300 ring-2 ring-purple-100 focus:border-purple-400"
+                    : "border-border focus:border-primary focus:ring-2 focus:ring-primary/20"
+                }`}
+              />
+              {aiGenerating && description && (
+                <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 rounded-md bg-purple-100 border border-purple-200">
+                  <RefreshCw className="w-2.5 h-2.5 text-purple-500 animate-spin" />
+                  <span className="text-[10px] font-semibold text-purple-600">Generating…</span>
+                </div>
+              )}
+            </div>
+
+            {description && !aiGenerating && (
+              <p className="text-[10px] text-muted-foreground mt-1.5">
+                {description.split(/\s+/).filter(Boolean).length} words · You can edit the AI draft before submitting.
+              </p>
+            )}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 pb-6 gap-3">
+        <div className="flex items-center justify-between px-6 pb-6 gap-3 shrink-0 border-t border-border pt-4">
           <button onClick={onClose} className="px-5 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors">
             Cancel
           </button>
           <button
             onClick={() => submit()}
-            disabled={!description.trim() || isPending}
+            disabled={!description.trim() || isPending || aiGenerating}
             className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-green-600 text-white font-semibold text-sm hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPending ? (

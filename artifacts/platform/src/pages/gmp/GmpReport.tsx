@@ -101,7 +101,7 @@ export default function GmpReport() {
 
   const { data: assessment, isLoading } = useGetGmpAssessment(id, { query: { enabled: !!id } });
   const { data: allFindings } = useListGmpFindings();
-  const [capaModal, setCapaModal] = useState<{ itemId: string; itemLabel: string; score: number } | null>(null);
+  const [capaModal, setCapaModal] = useState<{ itemId: string; itemLabel: string; itemDescription?: string; score: number } | null>(null);
 
   const findings = useMemo(() => (allFindings ?? []).filter(f => f.assessmentId === id), [allFindings, id]);
   const responses = useMemo(() => parseResponses((assessment?.responses ?? {}) as Record<string, unknown>), [assessment]);
@@ -345,7 +345,7 @@ export default function GmpReport() {
                             <p className="text-[10px] text-muted-foreground">{item.id} · {section.title}</p>
                           </div>
                           <button
-                            onClick={() => setCapaModal({ itemId: item.id, itemLabel: item.label, score: response!.score! })}
+                            onClick={() => setCapaModal({ itemId: item.id, itemLabel: item.label, itemDescription: item.description, score: response!.score! })}
                             className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors ${
                               response!.score === 1
                                 ? "bg-red-600 hover:bg-red-700 text-white"
@@ -420,7 +420,7 @@ export default function GmpReport() {
                         <td className="px-4 py-3 text-center">
                           {!na && score !== null && scoreRequiresCapa(score)
                             ? <button
-                                onClick={() => setCapaModal({ itemId: item.id, itemLabel: item.label, score })}
+                                onClick={() => setCapaModal({ itemId: item.id, itemLabel: item.label, itemDescription: item.description, score })}
                                 className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold text-white transition-colors ${
                                   score === 1 ? "bg-red-600 hover:bg-red-700" : "bg-orange-500 hover:bg-orange-600"
                                 }`}
@@ -655,6 +655,7 @@ export default function GmpReport() {
           assessmentId={id}
           itemId={capaModal.itemId}
           itemLabel={capaModal.itemLabel}
+          itemDescription={capaModal.itemDescription}
           score={capaModal.score}
           onClose={() => setCapaModal(null)}
         />

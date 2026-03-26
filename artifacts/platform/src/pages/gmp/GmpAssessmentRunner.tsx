@@ -179,7 +179,7 @@ export default function GmpAssessmentRunner() {
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
   const [hoveredScore, setHoveredScore] = useState<{ itemId: string; score: number } | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [capaModal, setCapaModal] = useState<{ itemId: string; itemLabel: string; score: number } | null>(null);
+  const [capaModal, setCapaModal] = useState<{ itemId: string; itemLabel: string; itemDescription?: string; score: number } | null>(null);
 
   // Migrate / load existing responses
   useEffect(() => {
@@ -499,7 +499,7 @@ export default function GmpAssessmentRunner() {
                             </div>
                           </div>
                           <button
-                            onClick={() => setCapaModal({ itemId: item.id, itemLabel: item.label, score: currentScore })}
+                            onClick={() => setCapaModal({ itemId: item.id, itemLabel: item.label, itemDescription: item.description, score: currentScore })}
                             className={`shrink-0 ml-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white text-xs font-semibold transition-colors ${bannerCfg.btnBg}`}
                           >
                             <Plus className="w-3 h-3" /> Raise Finding
@@ -607,6 +607,7 @@ export default function GmpAssessmentRunner() {
           assessmentId={id}
           itemId={capaModal.itemId}
           itemLabel={capaModal.itemLabel}
+          itemDescription={capaModal.itemDescription}
           score={capaModal.score}
           onClose={() => setCapaModal(null)}
         />
