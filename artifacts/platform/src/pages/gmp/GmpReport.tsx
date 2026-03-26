@@ -120,7 +120,7 @@ export default function GmpReport() {
 
   const allItems = useMemo(() => GMP_SECTIONS.flatMap(s =>
     s.items.map(item => ({
-      ...item,
+      item,
       section: s,
       response: responses[item.id] ?? null,
     }))
