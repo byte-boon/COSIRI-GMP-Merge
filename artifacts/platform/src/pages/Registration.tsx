@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
-import { Building, Factory, ShieldCheck, Activity, ArrowRight } from "lucide-react";
+import { Building, ShieldCheck, Activity, ArrowRight, Factory, CheckCircle2 } from "lucide-react";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useCreateCompany } from "@workspace/api-client-react";
 
@@ -16,6 +16,27 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+const MODULES = [
+  {
+    key: "cosiri" as const,
+    icon: Activity,
+    label: "COSIRI",
+    description: "Consumer Sustainability Industry Readiness Index — 24-dimension maturity scoring across strategy, operations, technology and governance.",
+  },
+  {
+    key: "gmp" as const,
+    icon: ShieldCheck,
+    label: "GMP",
+    description: "Good Manufacturing Practice audit tracker — checklist-based compliance audits with findings and CAPA management.",
+  },
+  {
+    key: "both" as const,
+    icon: Factory,
+    label: "Full Platform",
+    description: "Access both COSIRI and GMP modules in a unified workspace with shared company context.",
+  },
+];
 
 export default function Registration() {
   const [, setLocation] = useLocation();
@@ -40,111 +61,162 @@ export default function Registration() {
 
   return (
     <div className="min-h-screen w-full flex bg-background">
-      {/* Left side - Image */}
-      <div className="hidden lg:flex w-1/2 relative bg-sidebar overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-sidebar z-10" />
-        <img 
+      {/* Left panel — branding + module selection */}
+      <div className="hidden lg:flex flex-col w-[480px] shrink-0 relative bg-sidebar overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-sidebar to-sidebar/95 z-10 pointer-events-none" />
+        <img
           src={`${import.meta.env.BASE_URL}images/auth-bg.png`}
-          alt="Corporate abstract background"
-          className="w-full h-full object-cover opacity-60 mix-blend-overlay"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-luminosity"
         />
-        <div className="absolute bottom-12 left-12 right-12 z-20 text-white">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
-              <Building className="w-6 h-6 text-white" />
+
+        <div className="relative z-20 flex flex-col h-full px-10 py-10">
+          {/* App name / logo */}
+          <div className="flex items-center gap-3 mb-12">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shrink-0">
+              <Building className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-3xl font-display font-bold">Nexus Platform</h1>
+            <div>
+              <h1 className="text-xl font-display font-bold text-sidebar-foreground leading-tight">Nexus Platform</h1>
+              <p className="text-[11px] text-sidebar-foreground/50 uppercase tracking-widest">Sustainability & Compliance</p>
+            </div>
           </div>
-          <p className="text-xl font-light text-sidebar-foreground/80 leading-relaxed max-w-lg">
-            Unified sustainability and compliance management for modern enterprise operations.
-          </p>
+
+          {/* Module selection */}
+          <div className="flex-1">
+            <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-widest mb-5">Select Your Module</p>
+            <div className="space-y-3">
+              {MODULES.map((mod) => {
+                const Icon = mod.icon;
+                const isSelected = selectedModule === mod.key;
+                return (
+                  <motion.button
+                    key={mod.key}
+                    type="button"
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => { setSelectedModule(mod.key); form.setValue("modules", mod.key); }}
+                    className={`w-full text-left p-5 rounded-xl border transition-all duration-200 group ${
+                      isSelected
+                        ? "border-primary bg-primary/10 shadow-lg shadow-primary/10"
+                        : "border-sidebar-border bg-sidebar-accent/20 hover:bg-sidebar-accent/40 hover:border-sidebar-border/80"
+                    }`}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${isSelected ? "bg-primary" : "bg-sidebar-accent/60"}`}>
+                        <Icon className={`w-5 h-5 ${isSelected ? "text-white" : "text-sidebar-foreground/60"}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className={`font-semibold text-sm ${isSelected ? "text-sidebar-foreground" : "text-sidebar-foreground/80"}`}>{mod.label}</h3>
+                          {isSelected && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />}
+                        </div>
+                        <p className="text-xs text-sidebar-foreground/50 leading-relaxed">{mod.description}</p>
+                      </div>
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </div>
+
+            {form.formState.errors.modules && (
+              <p className="text-destructive text-xs mt-3">{form.formState.errors.modules.message}</p>
+            )}
+          </div>
+
+          {/* Bottom tagline */}
+          <div className="mt-8">
+            <p className="text-xs text-sidebar-foreground/30 leading-relaxed">
+              Unified sustainability scoring and compliance management for enterprise operations.
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Right side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12">
-        <motion.div 
+      {/* Right panel — registration form */}
+      <div className="flex-1 flex items-center justify-center p-8 sm:p-12">
+        <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           className="w-full max-w-md"
         >
-          <div className="mb-10 text-center lg:text-left">
+          <div className="mb-10">
             <h2 className="text-3xl font-display font-bold text-foreground mb-2">Create Workspace</h2>
             <p className="text-muted-foreground">Register your organization to get started</p>
           </div>
 
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-1.5 block text-foreground">Organization Name</label>
-                <input 
-                  {...form.register("name")}
-                  className="w-full px-4 py-3 rounded-xl bg-card border border-border focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
-                  placeholder="Acme Corp"
-                />
-                {form.formState.errors.name && <p className="text-destructive text-xs mt-1">{form.formState.errors.name.message}</p>}
-              </div>
+          {/* Mobile-only module selector */}
+          <div className="lg:hidden mb-6">
+            <label className="text-sm font-medium mb-3 block text-foreground">Select Module</label>
+            <div className="grid grid-cols-1 gap-2">
+              {MODULES.map((mod) => {
+                const Icon = mod.icon;
+                const isSelected = selectedModule === mod.key;
+                return (
+                  <button
+                    key={mod.key}
+                    type="button"
+                    onClick={() => { setSelectedModule(mod.key); form.setValue("modules", mod.key); }}
+                    className={`p-4 rounded-xl border-2 text-left transition-all ${isSelected ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 bg-card"}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className={`w-5 h-5 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
+                      <span className="font-medium text-sm">{mod.label}</span>
+                      {isSelected && <CheckCircle2 className="w-4 h-4 text-primary ml-auto" />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-              <div>
-                <label className="text-sm font-medium mb-1.5 block text-foreground">Industry</label>
-                <input 
-                  {...form.register("industry")}
-                  className="w-full px-4 py-3 rounded-xl bg-card border border-border focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
-                  placeholder="Manufacturing, Tech, etc."
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-1.5 block text-foreground">Admin Email</label>
-                <input 
-                  {...form.register("email")}
-                  type="email"
-                  className="w-full px-4 py-3 rounded-xl bg-card border border-border focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
-                  placeholder="admin@acme.com"
-                />
-              </div>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block text-foreground">Organization Name</label>
+              <input
+                {...form.register("name")}
+                className="w-full px-4 py-3 rounded-xl bg-card border border-border focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                placeholder="Acme Corp"
+              />
+              {form.formState.errors.name && <p className="text-destructive text-xs mt-1">{form.formState.errors.name.message}</p>}
             </div>
 
-            <div className="pt-4">
-              <label className="text-sm font-medium mb-3 block text-foreground">Select Modules</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => { setSelectedModule("cosiri"); form.setValue("modules", "cosiri"); }}
-                  className={`p-4 rounded-xl border-2 text-left transition-all ${selectedModule === "cosiri" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 bg-card"}`}
-                >
-                  <Activity className={`w-6 h-6 mb-2 ${selectedModule === "cosiri" ? "text-primary" : "text-muted-foreground"}`} />
-                  <h3 className="font-semibold text-foreground">COSIRI</h3>
-                  <p className="text-xs text-muted-foreground mt-1">Sustainability Index</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => { setSelectedModule("gmp"); form.setValue("modules", "gmp"); }}
-                  className={`p-4 rounded-xl border-2 text-left transition-all ${selectedModule === "gmp" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 bg-card"}`}
-                >
-                  <ShieldCheck className={`w-6 h-6 mb-2 ${selectedModule === "gmp" ? "text-primary" : "text-muted-foreground"}`} />
-                  <h3 className="font-semibold text-foreground">GMP</h3>
-                  <p className="text-xs text-muted-foreground mt-1">Good Manufacturing</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => { setSelectedModule("both"); form.setValue("modules", "both"); }}
-                  className={`p-4 rounded-xl border-2 text-left transition-all sm:col-span-2 ${selectedModule === "both" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 bg-card"}`}
-                >
-                  <Factory className={`w-6 h-6 mb-2 ${selectedModule === "both" ? "text-primary" : "text-muted-foreground"}`} />
-                  <h3 className="font-semibold text-foreground">Full Platform</h3>
-                  <p className="text-xs text-muted-foreground mt-1">Access to both COSIRI and GMP modules</p>
-                </button>
-              </div>
-              {form.formState.errors.modules && <p className="text-destructive text-xs mt-2">{form.formState.errors.modules.message}</p>}
+            <div>
+              <label className="text-sm font-medium mb-1.5 block text-foreground">Industry</label>
+              <input
+                {...form.register("industry")}
+                className="w-full px-4 py-3 rounded-xl bg-card border border-border focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                placeholder="Manufacturing, Tech, Pharma, etc."
+              />
+              {form.formState.errors.industry && <p className="text-destructive text-xs mt-1">{form.formState.errors.industry.message}</p>}
             </div>
+
+            <div>
+              <label className="text-sm font-medium mb-1.5 block text-foreground">Admin Email</label>
+              <input
+                {...form.register("email")}
+                type="email"
+                className="w-full px-4 py-3 rounded-xl bg-card border border-border focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                placeholder="admin@acme.com"
+              />
+              {form.formState.errors.email && <p className="text-destructive text-xs mt-1">{form.formState.errors.email.message}</p>}
+            </div>
+
+            {/* Show selected module badge */}
+            {selectedModule && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary/8 border border-primary/20 text-sm text-primary font-medium"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                Module selected: {MODULES.find(m => m.key === selectedModule)?.label}
+              </motion.div>
+            )}
 
             <button
               type="submit"
               disabled={isPending || !selectedModule}
-              className="w-full mt-8 py-4 px-6 rounded-xl font-semibold bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+              className="w-full mt-2 py-4 px-6 rounded-xl font-semibold bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
             >
               {isPending ? "Setting up workspace..." : "Continue to Hub"}
               {!isPending && <ArrowRight className="w-5 h-5" />}
