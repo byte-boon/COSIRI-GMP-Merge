@@ -5,7 +5,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { COSIRI_DATA, BUILDING_BLOCKS, BAND_DESCRIPTIONS } from "@/lib/cosiri-data";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useCreateCosiriAssessment, useSaveCosiriAnswers } from "@workspace/api-client-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { EvidenceBox } from "@/components/EvidenceBox";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -35,6 +35,61 @@ const SCORE_RING: Record<number, string> = {
   3: "ring-amber-400",
   4: "ring-blue-400",
   5: "ring-green-400",
+};
+
+const BLOCK_CONFIG: Record<string, {
+  bg: string; activeBg: string; border: string; activeBorder: string;
+  ring: string; icon: string; accent: string;
+  description: string; dimensions: string; covers: string[];
+}> = {
+  "Strategy & Risk Management": {
+    bg: "bg-violet-50/60 dark:bg-violet-950/20",
+    activeBg: "bg-violet-50 dark:bg-violet-950/40",
+    border: "border-violet-200/60 dark:border-violet-800/40",
+    activeBorder: "border-violet-400 dark:border-violet-500",
+    ring: "ring-violet-300/50 dark:ring-violet-700/50",
+    icon: "🟣",
+    accent: "text-violet-700 dark:text-violet-400",
+    description: "Evaluates how sustainability is embedded in corporate strategy and how climate-related and ESG risks are identified, assessed, and managed.",
+    dimensions: "8 dimensions",
+    covers: ["Sustainability Strategy", "Green Business Models", "Climate Risk (Physical)", "Transition Risk", "Compliance Risk", "Reputation Risk", "Capital Allocation", "ESG Integration"],
+  },
+  "Sustainable Business Processes": {
+    bg: "bg-emerald-50/60 dark:bg-emerald-950/20",
+    activeBg: "bg-emerald-50 dark:bg-emerald-950/40",
+    border: "border-emerald-200/60 dark:border-emerald-800/40",
+    activeBorder: "border-emerald-500 dark:border-emerald-500",
+    ring: "ring-emerald-300/50 dark:ring-emerald-700/50",
+    icon: "🟢",
+    accent: "text-emerald-700 dark:text-emerald-400",
+    description: "Measures the sustainability of day-to-day operations — from environmental impact management to responsible supply chain and circular product design.",
+    dimensions: "10 dimensions",
+    covers: ["GHG Emissions", "Energy & Resources", "Waste & Pollution", "Supplier Assessment", "Responsible Procurement", "Sustainable Transport", "Supply Chain Planning", "Product Design", "Circular Processes", "Lifecycle Management"],
+  },
+  "Technology": {
+    bg: "bg-sky-50/60 dark:bg-sky-950/20",
+    activeBg: "bg-sky-50 dark:bg-sky-950/40",
+    border: "border-sky-200/60 dark:border-sky-800/40",
+    activeBorder: "border-sky-500 dark:border-sky-400",
+    ring: "ring-sky-300/50 dark:ring-sky-700/50",
+    icon: "🔵",
+    accent: "text-sky-700 dark:text-sky-400",
+    description: "Assesses the adoption of clean and digital technologies to enable sustainable operations and provides digital transparency across the value chain.",
+    dimensions: "2 dimensions",
+    covers: ["Technology Adoption (clean & digital tech)", "Transparency & Digital Visibility"],
+  },
+  "Organisation & Governance": {
+    bg: "bg-amber-50/60 dark:bg-amber-950/20",
+    activeBg: "bg-amber-50 dark:bg-amber-950/40",
+    border: "border-amber-200/60 dark:border-amber-800/40",
+    activeBorder: "border-amber-500 dark:border-amber-400",
+    ring: "ring-amber-300/50 dark:ring-amber-700/50",
+    icon: "🟡",
+    accent: "text-amber-700 dark:text-amber-500",
+    description: "Examines the people, culture, leadership commitment, reporting standards, and governance structures that underpin a sustainable organisation.",
+    dimensions: "4 dimensions",
+    covers: ["Workforce Development", "Leadership & Culture", "External Reporting & Communication", "Governance Structures & Policies"],
+  },
 };
 
 interface SiteProfile {
@@ -331,35 +386,72 @@ export default function CosiriAssessment() {
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Navigation Sidebar */}
         <div className="w-full lg:w-64 shrink-0 space-y-2">
+          <TooltipProvider delayDuration={300}>
           {BUILDING_BLOCKS.map(block => {
             const blockDims = COSIRI_DATA.filter(d => d.block === block);
             const answeredInBlock = blockDims.filter(d => answers[d.id] !== undefined).length;
             const isComplete = answeredInBlock === blockDims.length;
             const isActive = activeBlock === block;
             const avg = blockAvg(block);
+            const cfg = BLOCK_CONFIG[block] ?? {
+              bg: "bg-muted/40", activeBg: "bg-muted/60",
+              border: "border-border", activeBorder: "border-primary",
+              ring: "ring-primary/20", icon: "⬜", accent: "text-foreground",
+              description: "", dimensions: "", covers: [],
+            };
 
             return (
               <button
                 key={block}
                 onClick={() => setActiveBlock(block)}
-                className={`w-full text-left p-4 rounded-xl border transition-all flex flex-col gap-2 ${isActive ? "bg-card border-primary shadow-sm ring-1 ring-primary/20" : "bg-transparent border-transparent hover:bg-muted/50"}`}
+                className={`w-full text-left p-4 rounded-xl border transition-all flex flex-col gap-2 shadow-sm ${
+                  isActive
+                    ? `${cfg.activeBg} ${cfg.activeBorder} ring-2 ${cfg.ring}`
+                    : `${cfg.bg} ${cfg.border} hover:brightness-95`
+                }`}
               >
-                <div className="flex items-start justify-between w-full">
-                  <span className={`font-semibold text-sm leading-snug ${isActive ? "text-primary" : "text-foreground"}`}>{block}</span>
-                  {isComplete ? (
-                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-                  ) : avg !== null ? (
-                    <span className={`text-xs font-bold shrink-0 mt-0.5 ${
-                      avg >= 4 ? "text-green-600" : avg >= 2 ? "text-blue-600" : "text-amber-500"
-                    }`}>
-                      {avg.toFixed(1)}
-                    </span>
-                  ) : null}
+                <div className="flex items-start justify-between w-full gap-2">
+                  <div className="flex items-start gap-2 min-w-0">
+                    <span className="text-base shrink-0 mt-0.5">{cfg.icon}</span>
+                    <span className={`font-semibold text-sm leading-snug ${isActive ? cfg.accent : "text-foreground"}`}>{block}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+                    {isComplete && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                    {!isComplete && avg !== null && (
+                      <span className={`text-xs font-bold ${avg >= 4 ? "text-green-600" : avg >= 2 ? "text-blue-600" : "text-amber-500"}`}>
+                        {avg.toFixed(1)}
+                      </span>
+                    )}
+                    <Tooltip>
+                      <TooltipTrigger asChild onClick={e => e.stopPropagation()}>
+                        <span className="cursor-help">
+                          <Info className={`w-3.5 h-3.5 ${cfg.accent} opacity-50 hover:opacity-90 transition-opacity`} />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="right"
+                        sideOffset={12}
+                        className="bg-card text-card-foreground border border-border shadow-xl rounded-xl p-4 max-w-[270px] z-50"
+                      >
+                        <p className={`font-bold text-sm mb-1 ${cfg.accent}`}>{block}</p>
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">{cfg.dimensions}</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed mb-3">{cfg.description}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-foreground mb-1.5">Dimensions covered</p>
+                        <ul className="space-y-1">
+                          {cfg.covers.map(c => (
+                            <li key={c} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                              <span className={`${cfg.accent} mt-0.5 shrink-0`}>✦</span>{c}
+                            </li>
+                          ))}
+                        </ul>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground font-mono">{answeredInBlock} / {blockDims.length} answered</span>
                   {avg !== null && (
-                    <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div className="w-16 h-1.5 rounded-full bg-black/10 overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${avg >= 4 ? "bg-green-500" : avg >= 2 ? "bg-blue-500" : "bg-amber-400"}`}
                         style={{ width: `${(avg / 5) * 100}%` }}
@@ -370,6 +462,7 @@ export default function CosiriAssessment() {
               </button>
             );
           })}
+          </TooltipProvider>
         </div>
 
         {/* Content Area */}
