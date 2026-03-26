@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
-import { Building, ShieldCheck, Activity, ArrowRight, Factory, CheckCircle2, ChevronDown, Eye, EyeOff, Lock } from "lucide-react";
+import { Building, ShieldCheck, Activity, ArrowRight, Factory, CheckCircle2, ChevronDown, Eye, EyeOff, Lock, LogOut } from "lucide-react";
 import { useCompany } from "@/contexts/CompanyContext";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -101,7 +101,7 @@ const MODULES = [
 
 export default function Registration() {
   const [, setLocation] = useLocation();
-  const { setAuth } = useCompany();
+  const { setAuth, company, logout } = useCompany();
   const [selectedModule, setSelectedModule] = useState<"cosiri" | "gmp" | "both" | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -219,6 +219,28 @@ export default function Registration() {
           animate={{ opacity: 1, x: 0 }}
           className="w-full max-w-md"
         >
+          {/* Already signed in banner */}
+          {company && (
+            <div className="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <p className="text-sm font-semibold text-foreground mb-1">Already signed in</p>
+              <p className="text-xs text-muted-foreground mb-3">You are signed in as <span className="font-medium text-foreground">{company.name}</span>.</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setLocation("/hub")}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
+                >
+                  Go to dashboard
+                </button>
+                <button
+                  onClick={() => { logout(); }}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-xs font-semibold text-muted-foreground hover:text-destructive hover:border-destructive/40 hover:bg-destructive/5 transition-colors"
+                >
+                  <LogOut className="w-3.5 h-3.5" /> Sign out
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="mb-8">
             <h2 className="text-3xl font-display font-bold text-foreground mb-2">Create Workspace</h2>
             <p className="text-muted-foreground">Register your organisation to get started</p>
