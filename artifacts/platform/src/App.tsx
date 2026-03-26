@@ -6,12 +6,14 @@ import NotFound from "@/pages/not-found";
 
 import { CompanyProvider } from "@/contexts/CompanyContext";
 import Registration from "@/pages/Registration";
+import Login from "@/pages/Login";
 import Hub from "@/pages/Hub";
 import CosiriHome from "@/pages/cosiri/CosiriHome";
 import CosiriAssessment from "@/pages/cosiri/CosiriAssessment";
 import CosiriResults from "@/pages/cosiri/CosiriResults";
 import CosiriReport from "@/pages/cosiri/CosiriReport";
 import CosiriReports from "@/pages/cosiri/CosiriReports";
+import CosiriRoadmap from "@/pages/cosiri/CosiriRoadmap";
 import GmpDashboard from "@/pages/gmp/GmpDashboard";
 import GmpReports from "@/pages/gmp/GmpReports";
 import GmpAssessmentList from "@/pages/gmp/GmpAssessmentList";
@@ -32,14 +34,16 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Registration} />
+      <Route path="/login" component={Login} />
       <Route path="/hub" component={Hub} />
-      
+
       {/* COSIRI Routes */}
       <Route path="/cosiri" component={CosiriHome} />
       <Route path="/cosiri/assessment" component={CosiriAssessment} />
       <Route path="/cosiri/results/:id" component={CosiriResults} />
       <Route path="/cosiri/reports" component={CosiriReports} />
       <Route path="/cosiri/report/:id" component={CosiriReport} />
+      <Route path="/cosiri/roadmap/:id" component={CosiriRoadmap} />
 
       {/* GMP Routes */}
       <Route path="/gmp" component={GmpDashboard} />

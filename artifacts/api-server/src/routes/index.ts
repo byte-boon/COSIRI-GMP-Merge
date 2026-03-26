@@ -4,10 +4,12 @@ import companiesRouter from "./companies";
 import cosiriRouter from "./cosiri";
 import gmpRouter from "./gmp";
 import storageRouter from "./storage";
+import authRouter from "./auth";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(authRouter);
 router.use(companiesRouter);
 router.use(cosiriRouter);
 router.use(gmpRouter);

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { cosiriAssessments, cosiriAnswers, cosiriAiInsights, cosiriUsageCounters, cosiriEvidence } from "@workspace/db/schema";
+import { cosiriAssessments, cosiriAnswers, cosiriAiInsights, cosiriUsageCounters, cosiriEvidence, cosiriImprovementPlans } from "@workspace/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import OpenAI from "openai";
 import { ObjectStorageService } from "../lib/objectStorage.js";
@@ -426,6 +426,160 @@ Keep the summary factual, specific, and directly tied to the COSIRI dimension cr
     console.error("analyzeEvidence error:", err);
     await db.update(cosiriEvidence).set({ summaryStatus: "failed" }).where(eq(cosiriEvidence.id, parseInt(req.params.id)));
     return res.status(500).json({ error: "Analysis failed" });
+  }
+});
+
+// ---- COSIRI Improvement Plan ----
+
+const IMPROVEMENT_PLAN_PROMPT = `You are a strategic sustainability transformation advisor. Based on the COSIRI assessment results below, create a detailed, actionable improvement roadmap.
+
+Company: {{companyName}}
+Industry: {{industry}}
+Overall COSIRI Score: {{overallScore}}/5.0
+
+DIMENSION SCORES BY BUILDING BLOCK:
+{{dimensionSummary}}
+
+CRITICAL GAPS (lowest scoring dimensions):
+{{weakestAreas}}
+
+Return ONLY valid JSON (no markdown code blocks, no explanation, no extra text) with this exact structure:
+{
+  "overallObjective": "One-sentence transformation goal for this company",
+  "currentBand": <integer 0-5>,
+  "targetBand": <integer, typically currentBand+1 or currentBand+2>,
+  "timelineMonths": <integer, typically 18-36>,
+  "executiveSummary": "2-3 sentence summary of the improvement journey",
+  "phases": [
+    {
+      "phase": <integer starting at 1>,
+      "name": "Phase name (e.g. Foundation, Integration, Optimisation)",
+      "period": "Months X-Y",
+      "objective": "What this phase achieves",
+      "priority": "high|medium|low",
+      "dimensionIds": ["D1", "D3"],
+      "actions": [
+        {
+          "title": "Specific action title",
+          "description": "What needs to be done, how, and why it matters",
+          "dimensionIds": ["D1"],
+          "owner": "Role responsible (e.g. Chief Sustainability Officer)",
+          "timeline": "Month X-Y",
+          "resources": {
+            "budget": "Estimated cost range in USD",
+            "people": "FTE and roles required",
+            "technology": "Tools or platforms needed"
+          },
+          "kpi": "Specific measurable success indicator",
+          "expectedBandImprovement": "e.g. Band 1 → Band 2"
+        }
+      ]
+    }
+  ]
+}
+
+Rules:
+- Focus on the lowest-scoring dimensions first
+- Actions must be specific, measurable, and realistic for the {{industry}} industry
+- Sequence actions logically across 2-4 phases
+- Each phase should have 2-5 actions
+- Budget estimates should be realistic for enterprise-scale work
+- Be concise but specific in descriptions`;
+
+router.post("/cosiri/assessments/:id/improvement-plan", async (req, res) => {
+  try {
+    const assessmentId = parseInt(req.params.id);
+    if (isNaN(assessmentId)) return res.status(400).json({ error: "Invalid id" });
+
+    const [assessment] = await db.select().from(cosiriAssessments).where(eq(cosiriAssessments.id, assessmentId));
+    if (!assessment) return res.status(404).json({ error: "Assessment not found" });
+
+    const answers = await db.select().from(cosiriAnswers).where(eq(cosiriAnswers.assessmentId, assessmentId));
+    if (answers.length === 0) return res.status(400).json({ error: "No answers found" });
+
+    // Check if plan already generating
+    const [existing] = await db.select().from(cosiriImprovementPlans)
+      .where(eq(cosiriImprovementPlans.assessmentId, assessmentId))
+      .orderBy(desc(cosiriImprovementPlans.createdAt)).limit(1);
+
+    if (existing?.status === "generating") {
+      return res.status(409).json({ error: "Plan generation already in progress" });
+    }
+
+    // Build dimension summary
+    const blockGroups: Record<string, Array<{ id: string; name: string; score: number }>> = {};
+    for (const a of answers) {
+      const meta = DIMENSION_META[a.dimensionId];
+      if (!meta) continue;
+      if (!blockGroups[meta.block]) blockGroups[meta.block] = [];
+      blockGroups[meta.block].push({ id: a.dimensionId, name: meta.name, score: a.score });
+    }
+
+    let dimensionSummary = "";
+    for (const [block, dims] of Object.entries(blockGroups)) {
+      const avg = dims.reduce((s, d) => s + d.score, 0) / dims.length;
+      dimensionSummary += `\n${block} (Avg: ${avg.toFixed(1)}/5)\n`;
+      for (const d of dims) dimensionSummary += `  ${d.id} ${d.name}: Band ${d.score}/5\n`;
+    }
+
+    const sorted = [...answers].sort((a, b) => a.score - b.score);
+    const weakest = sorted.slice(0, 6).map(a => `  ${a.dimensionId} ${DIMENSION_META[a.dimensionId]?.name}: Band ${a.score}/5`).join("\n");
+    const overallScore = (assessment.overallScore / 10).toFixed(1);
+
+    const prompt = IMPROVEMENT_PLAN_PROMPT
+      .replace("{{companyName}}", assessment.companyName)
+      .replace(/\{\{industry\}\}/g, assessment.industry)
+      .replace("{{overallScore}}", overallScore)
+      .replace("{{dimensionSummary}}", dimensionSummary)
+      .replace("{{weakestAreas}}", weakest);
+
+    // Create pending record
+    const [plan] = await db.insert(cosiriImprovementPlans).values({
+      assessmentId,
+      companyName: assessment.companyName,
+      industry: assessment.industry,
+      overallScore: assessment.overallScore,
+      status: "generating",
+      model: "gpt-4o",
+    }).returning();
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 4096,
+      temperature: 0.3,
+      response_format: { type: "json_object" },
+    });
+
+    const rawContent = response.choices[0]?.message?.content || "{}";
+    const tokensUsed = response.usage?.total_tokens || 0;
+
+    const [updated] = await db.update(cosiriImprovementPlans)
+      .set({ planJson: rawContent, status: "completed", tokensUsed, updatedAt: new Date() })
+      .where(eq(cosiriImprovementPlans.id, plan.id))
+      .returning();
+
+    return res.json(updated);
+  } catch (err) {
+    console.error("generateImprovementPlan error:", err);
+    return res.status(500).json({ error: "Internal server error", details: String(err) });
+  }
+});
+
+router.get("/cosiri/assessments/:id/improvement-plan", async (req, res) => {
+  try {
+    const assessmentId = parseInt(req.params.id);
+    if (isNaN(assessmentId)) return res.status(400).json({ error: "Invalid id" });
+
+    const [plan] = await db.select().from(cosiriImprovementPlans)
+      .where(eq(cosiriImprovementPlans.assessmentId, assessmentId))
+      .orderBy(desc(cosiriImprovementPlans.createdAt)).limit(1);
+
+    if (!plan) return res.status(404).json({ error: "No improvement plan found" });
+    return res.json(plan);
+  } catch (err) {
+    console.error("getImprovementPlan error:", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

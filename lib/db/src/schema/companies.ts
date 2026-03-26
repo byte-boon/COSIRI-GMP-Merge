@@ -8,6 +8,8 @@ export const companies = pgTable("companies", {
   industry: text("industry").notNull(),
   email: text("email"),
   modules: text("modules").notNull().default("cosiri"),
+  passwordHash: text("password_hash"),
+  sessionToken: text("session_token"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

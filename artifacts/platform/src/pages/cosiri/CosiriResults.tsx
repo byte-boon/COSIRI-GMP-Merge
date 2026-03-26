@@ -1,6 +1,6 @@
 import { useRoute } from "wouter";
 import { Link } from "wouter";
-import { Activity, Download, ChevronLeft, Bot } from "lucide-react";
+import { Activity, Download, ChevronLeft, Bot, Map } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { CosiriRadar } from "@/components/CosiriRadar";
 import { COSIRI_DATA, BAND_DESCRIPTIONS } from "@/lib/cosiri-data";
@@ -57,7 +57,10 @@ export default function CosiriResults() {
               <span className="text-sm">{BAND_DESCRIPTIONS[Math.round(assessment.overallScore)]?.title ?? ""}</span>
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
+            <Link href={`/cosiri/roadmap/${id}`} className="px-4 py-2 bg-card border border-border shadow-sm rounded-lg font-medium text-foreground hover:bg-muted transition-colors flex items-center gap-2">
+              <Map className="w-4 h-4 text-emerald-500" /> Improvement Roadmap
+            </Link>
             <Link href={`/cosiri/report/${id}`} className="px-4 py-2 bg-card border border-border shadow-sm rounded-lg font-medium text-foreground hover:bg-muted transition-colors flex items-center gap-2">
               <Bot className="w-4 h-4 text-purple-500" /> AI Insights
             </Link>
