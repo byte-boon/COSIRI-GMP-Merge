@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
-import { ArrowRight, Eye, EyeOff, Lock, Mail, LogOut } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Lock, Mail, LogOut, Leaf } from "lucide-react";
 import { useCompany } from "@/contexts/CompanyContext";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -66,12 +66,10 @@ export default function Login() {
         />
         <div className="relative z-20 flex flex-col h-full px-10 py-10">
           <div className="flex items-center gap-3 mb-12">
-            <img
-              src={`${import.meta.env.BASE_URL}images/logo-icon.png`}
-              alt="SustainPro icon"
-              className="h-12 w-12 object-contain shrink-0"
-            />
-            <p className="text-2xl font-bold text-emerald-400 tracking-tight">SustainPro</p>
+            <div className="h-10 w-10 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0">
+              <Leaf className="w-5 h-5 text-white" />
+            </div>
+            <p className="text-2xl font-bold text-white tracking-tight">SustainPro</p>
           </div>
 
           <div className="flex-1 flex flex-col justify-center">

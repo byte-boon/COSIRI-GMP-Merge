@@ -8,6 +8,7 @@ import {
   HelpCircle,
   LogOut,
   MoreHorizontal,
+  Leaf,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -110,13 +111,11 @@ export function Sidebar() {
     <aside className="w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col h-screen fixed left-0 top-0 z-20 shadow-xl">
 
       {/* ── Logo ── */}
-      <div className="h-16 flex items-center gap-3 px-4 border-b border-sidebar-border bg-black shrink-0">
-        <img
-          src={`${import.meta.env.BASE_URL}images/logo-icon.png`}
-          alt="SustainPro"
-          className="h-9 w-9 object-contain shrink-0"
-        />
-        <p className="font-bold text-base text-emerald-400 tracking-tight">SustainPro</p>
+      <div className="h-16 flex items-center gap-3 px-4 border-b border-sidebar-border shrink-0">
+        <div className="h-9 w-9 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0">
+          <Leaf className="w-5 h-5 text-white" />
+        </div>
+        <p className="font-bold text-base text-white tracking-tight">SustainPro</p>
       </div>
 
       {/* ── Nav ── */}
