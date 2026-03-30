@@ -118,10 +118,10 @@ export default function CosiriResults() {
         <Link href="/cosiri" className="text-sm text-muted-foreground hover:text-primary flex items-center mb-4 transition-colors">
           <ChevronLeft className="w-4 h-4 mr-1" /> Back to Dashboard
         </Link>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-display font-bold">Assessment Results</h1>
-            <div className="flex items-center gap-4 mt-2">
+            <h1 className="text-2xl sm:text-3xl font-display font-bold">Assessment Results</h1>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2">
               <div className="flex items-center gap-1.5">
                 {[1, 2, 3, 4, 5].map(i => (
                   <Star key={i} className={`w-5 h-5 ${i <= score ? "fill-amber-400 text-amber-400" : "text-muted-foreground/25"}`} />
@@ -133,7 +133,7 @@ export default function CosiriResults() {
               </span>
             </div>
           </div>
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex gap-2 flex-wrap">
             <Link href={`/cosiri/roadmap/${id}`} className="px-4 py-2 bg-card border border-border shadow-sm rounded-lg font-medium text-foreground hover:bg-muted transition-colors flex items-center gap-2">
               <Map className="w-4 h-4 text-emerald-500" /> Improvement Roadmap
             </Link>

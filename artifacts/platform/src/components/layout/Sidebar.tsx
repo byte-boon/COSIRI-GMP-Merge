@@ -10,14 +10,13 @@ import {
   MoreHorizontal,
   Leaf,
   MapPin,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useQuery } from "@tanstack/react-query";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-
-/* ── Small sub-components ── */
 
 function NavItem({
   href,
@@ -26,6 +25,7 @@ function NavItem({
   badge,
   badgeColor = "green",
   isActive,
+  onNavigate,
 }: {
   href: string;
   icon: React.ReactNode;
@@ -33,10 +33,12 @@ function NavItem({
   badge?: number;
   badgeColor?: "green" | "amber";
   isActive: boolean;
+  onNavigate?: () => void;
 }) {
   return (
     <Link
       href={href}
+      onClick={onNavigate}
       className={cn(
         "flex items-center gap-3 py-2 pr-3 text-sm transition-all rounded-r-sm border-l-2",
         isActive
@@ -71,9 +73,7 @@ function SectionLabel({ label }: { label: string }) {
   );
 }
 
-/* ── Main Sidebar ── */
-
-export function Sidebar() {
+export function Sidebar({ open, onClose }: { open?: boolean; onClose?: () => void }) {
   const [location] = useLocation();
   const { company, logout } = useCompany();
 
@@ -108,121 +108,149 @@ export function Sidebar() {
     .slice(0, 2)
     .toUpperCase();
 
+  const nav = onClose;
+
   return (
-    <aside className="w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col h-screen fixed left-0 top-0 z-20 shadow-xl">
+    <>
+      {/* Mobile overlay */}
+      {open && (
+        <div
+          className="fixed inset-0 bg-black/50 z-20 md:hidden"
+          onClick={onClose}
+        />
+      )}
 
-      {/* ── Logo ── */}
-      <div className="h-16 flex items-center gap-3 px-4 border-b border-sidebar-border shrink-0">
-        <div className="h-9 w-9 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0">
-          <Leaf className="w-5 h-5 text-white" />
-        </div>
-        <p className="font-bold text-base text-white tracking-tight">SustainPro</p>
-      </div>
-
-      {/* ── Nav ── */}
-      <nav className="flex-1 py-4 overflow-y-auto">
-
-        {/* Platform Hub */}
-        <div className="px-3 mb-4">
-          <Link
-            href="/hub"
-            className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
-              location === "/hub"
-                ? "bg-sidebar-accent text-sidebar-foreground"
-                : "text-sidebar-foreground/60 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground/90"
-            )}
+      <aside
+        className={cn(
+          "w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col h-screen fixed left-0 top-0 z-30 shadow-xl transition-transform duration-300 print:hidden",
+          "md:translate-x-0",
+          open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        )}
+      >
+        {/* ── Logo ── */}
+        <div className="h-16 flex items-center gap-3 px-4 border-b border-sidebar-border shrink-0">
+          <div className="h-9 w-9 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0">
+            <Leaf className="w-5 h-5 text-white" />
+          </div>
+          <p className="font-bold text-base text-white tracking-tight flex-1">SustainPro</p>
+          {/* Close button — mobile only */}
+          <button
+            onClick={onClose}
+            className="md:hidden p-1.5 rounded-lg text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/40 transition-colors"
           >
-            <LayoutDashboard className="w-4 h-4 shrink-0 opacity-70" />
-            Platform Hub
-          </Link>
-        </div>
-
-        {/* COSIRI */}
-        <div className="mb-4">
-          <SectionLabel label="COSIRI" />
-          <div className="space-y-0.5 mt-2 pl-3 pr-3">
-            <NavItem href="/cosiri"           icon={<TrendingUp  className="w-4 h-4" />} label="Dashboard"          isActive={location === "/cosiri"} />
-            <NavItem href="/cosiri/assessment" icon={<FileText    className="w-4 h-4" />} label="Audits"             isActive={location === "/cosiri/assessment" || location.startsWith("/cosiri/assessment")} />
-            <NavItem
-              href="/cosiri/reports"
-              icon={<BarChart3 className="w-4 h-4" />}
-              label="Findings & Reports"
-              badge={completedCosiri > 0 ? completedCosiri : undefined}
-              badgeColor="green"
-              isActive={location.startsWith("/cosiri/report")}
-            />
-            <NavItem
-              href="/cosiri/roadmaps"
-              icon={<MapPin className="w-4 h-4" />}
-              label="Improvement Roadmap"
-              isActive={location.startsWith("/cosiri/roadmap")}
-            />
-          </div>
-        </div>
-
-        {/* GMP */}
-        <div className="mb-4">
-          <SectionLabel label="GMP" />
-          <div className="space-y-0.5 mt-2 pl-3 pr-3">
-            <NavItem href="/gmp"             icon={<TrendingUp    className="w-4 h-4" />} label="Dashboard"      isActive={location === "/gmp"} />
-            <NavItem href="/gmp/assessments" icon={<FileText      className="w-4 h-4" />} label="Audits"         isActive={location.startsWith("/gmp/assessments")} />
-            <NavItem
-              href="/gmp/findings"
-              icon={<AlertTriangle className="w-4 h-4" />}
-              label="Findings & CAPA"
-              badge={openGmpFindings > 0 ? openGmpFindings : undefined}
-              badgeColor="amber"
-              isActive={location === "/gmp/findings"}
-            />
-            <NavItem href="/gmp/reports" icon={<BarChart3 className="w-4 h-4" />} label="Reports" isActive={location === "/gmp/reports"} />
-          </div>
-        </div>
-
-      </nav>
-
-      {/* ── Bottom ── */}
-      <div className="border-t border-sidebar-border shrink-0">
-
-        {/* Help & Support */}
-        <div className="px-3 pt-3 pb-1">
-          <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-sidebar-foreground/50 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground/80 transition-all">
-            <HelpCircle className="w-4 h-4 shrink-0" />
-            Help &amp; Support
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* User card */}
-        <div className="px-3 py-2">
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-sidebar-accent/30 hover:bg-sidebar-accent/50 transition-all group">
-            <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold text-xs shrink-0">
-              {initials}
+        {/* ── Nav ── */}
+        <nav className="flex-1 py-4 overflow-y-auto">
+
+          {/* Platform Hub */}
+          <div className="px-3 mb-4">
+            <Link
+              href="/hub"
+              onClick={nav}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                location === "/hub"
+                  ? "bg-sidebar-accent text-sidebar-foreground"
+                  : "text-sidebar-foreground/60 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground/90"
+              )}
+            >
+              <LayoutDashboard className="w-4 h-4 shrink-0 opacity-70" />
+              Platform Hub
+            </Link>
+          </div>
+
+          {/* COSIRI */}
+          <div className="mb-4">
+            <SectionLabel label="COSIRI" />
+            <div className="space-y-0.5 mt-2 pl-3 pr-3">
+              <NavItem href="/cosiri"           icon={<TrendingUp  className="w-4 h-4" />} label="Dashboard"          isActive={location === "/cosiri"} onNavigate={nav} />
+              <NavItem href="/cosiri/assessment" icon={<FileText    className="w-4 h-4" />} label="Audits"             isActive={location === "/cosiri/assessment" || location.startsWith("/cosiri/assessment")} onNavigate={nav} />
+              <NavItem
+                href="/cosiri/reports"
+                icon={<BarChart3 className="w-4 h-4" />}
+                label="Findings & Reports"
+                badge={completedCosiri > 0 ? completedCosiri : undefined}
+                badgeColor="green"
+                isActive={location.startsWith("/cosiri/report")}
+                onNavigate={nav}
+              />
+              <NavItem
+                href="/cosiri/roadmaps"
+                icon={<MapPin className="w-4 h-4" />}
+                label="Improvement Roadmap"
+                isActive={location.startsWith("/cosiri/roadmap")}
+                onNavigate={nav}
+              />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-sidebar-foreground truncate leading-tight">{company.name}</p>
-              <p className="text-[11px] text-sidebar-foreground/45 truncate leading-tight">{company.industry}</p>
+          </div>
+
+          {/* GMP */}
+          <div className="mb-4">
+            <SectionLabel label="GMP" />
+            <div className="space-y-0.5 mt-2 pl-3 pr-3">
+              <NavItem href="/gmp"             icon={<TrendingUp    className="w-4 h-4" />} label="Dashboard"      isActive={location === "/gmp"} onNavigate={nav} />
+              <NavItem href="/gmp/assessments" icon={<FileText      className="w-4 h-4" />} label="Audits"         isActive={location.startsWith("/gmp/assessments")} onNavigate={nav} />
+              <NavItem
+                href="/gmp/findings"
+                icon={<AlertTriangle className="w-4 h-4" />}
+                label="Findings & CAPA"
+                badge={openGmpFindings > 0 ? openGmpFindings : undefined}
+                badgeColor="amber"
+                isActive={location === "/gmp/findings"}
+                onNavigate={nav}
+              />
+              <NavItem href="/gmp/reports" icon={<BarChart3 className="w-4 h-4" />} label="Reports" isActive={location === "/gmp/reports"} onNavigate={nav} />
             </div>
-            <button className="shrink-0 p-1 rounded text-sidebar-foreground/30 hover:text-sidebar-foreground/70 transition-colors opacity-0 group-hover:opacity-100">
-              <MoreHorizontal className="w-4 h-4" />
+          </div>
+
+        </nav>
+
+        {/* ── Bottom ── */}
+        <div className="border-t border-sidebar-border shrink-0">
+
+          {/* Help & Support */}
+          <div className="px-3 pt-3 pb-1">
+            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-sidebar-foreground/50 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground/80 transition-all">
+              <HelpCircle className="w-4 h-4 shrink-0" />
+              Help &amp; Support
             </button>
           </div>
-        </div>
 
-        {/* Sign out */}
-        <div className="px-3 pb-3">
-          <button
-            onClick={() => {
-              logout();
-              window.location.href = import.meta.env.BASE_URL;
-            }}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-sidebar-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-all"
-          >
-            <LogOut className="w-4 h-4 shrink-0" />
-            Sign out
-          </button>
-        </div>
+          {/* User card */}
+          <div className="px-3 py-2">
+            <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-sidebar-accent/30 hover:bg-sidebar-accent/50 transition-all group">
+              <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold text-xs shrink-0">
+                {initials}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-sidebar-foreground truncate leading-tight">{company.name}</p>
+                <p className="text-[11px] text-sidebar-foreground/45 truncate leading-tight">{company.industry}</p>
+              </div>
+              <button className="shrink-0 p-1 rounded text-sidebar-foreground/30 hover:text-sidebar-foreground/70 transition-colors opacity-0 group-hover:opacity-100">
+                <MoreHorizontal className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
 
-      </div>
-    </aside>
+          {/* Sign out */}
+          <div className="px-3 pb-3">
+            <button
+              onClick={() => {
+                logout();
+                window.location.href = import.meta.env.BASE_URL;
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-sidebar-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-all"
+            >
+              <LogOut className="w-4 h-4 shrink-0" />
+              Sign out
+            </button>
+          </div>
+
+        </div>
+      </aside>
+    </>
   );
 }
