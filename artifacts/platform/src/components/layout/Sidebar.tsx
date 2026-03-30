@@ -8,7 +8,6 @@ import {
   AlertTriangle,
   BarChart3,
   Info,
-  Leaf,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -26,14 +25,12 @@ export function Sidebar() {
 
   return (
     <aside className="w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col h-screen fixed left-0 top-0 z-20 transition-all shadow-xl">
-      <div className="h-16 flex items-center px-5 border-b border-sidebar-border bg-sidebar-accent/30 gap-3">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-green-700 flex items-center justify-center shadow-md shrink-0">
-          <Leaf className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <h1 className="font-display font-bold text-base leading-tight tracking-tight text-sidebar-foreground">SustainPro</h1>
-          <p className="text-[10px] uppercase tracking-widest text-sidebar-foreground/45 leading-tight">Sustainability & Compliance</p>
-        </div>
+      <div className="h-16 flex items-center px-5 border-b border-sidebar-border bg-white/95">
+        <img
+          src={`${import.meta.env.BASE_URL}images/logo.png`}
+          alt="SustainPro"
+          className="h-10 w-auto object-contain"
+        />
       </div>
 
       <nav className="flex-1 py-6 px-4 space-y-6 overflow-y-auto">
