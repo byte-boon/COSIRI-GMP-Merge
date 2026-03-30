@@ -65,13 +65,16 @@ export default function Login() {
           className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-luminosity"
         />
         <div className="relative z-20 flex flex-col h-full px-10 py-10">
-          <div className="mb-12 -mx-10 -mt-10 overflow-hidden">
+          <div className="flex items-center gap-3 mb-12">
             <img
-              src={`${import.meta.env.BASE_URL}images/logo.png`}
-              alt="SustainPro"
-              className="w-full object-cover"
-              style={{ height: "72px" }}
+              src={`${import.meta.env.BASE_URL}images/logo-icon.png`}
+              alt="SustainPro icon"
+              className="h-12 w-12 object-contain shrink-0"
             />
+            <div>
+              <p className="text-2xl font-bold leading-tight text-emerald-400 tracking-tight">SustainPro</p>
+              <p className="text-[11px] uppercase tracking-widest text-emerald-600/70 leading-tight">Sustainability & Compliance</p>
+            </div>
           </div>
 
           <div className="flex-1 flex flex-col justify-center">

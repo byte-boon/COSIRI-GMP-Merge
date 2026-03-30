@@ -25,12 +25,16 @@ export function Sidebar() {
 
   return (
     <aside className="w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col h-screen fixed left-0 top-0 z-20 transition-all shadow-xl">
-      <div className="h-16 border-b border-sidebar-border bg-black overflow-hidden">
+      <div className="h-16 flex items-center gap-3 px-4 border-b border-sidebar-border bg-black">
         <img
-          src={`${import.meta.env.BASE_URL}images/logo.png`}
-          alt="SustainPro"
-          className="w-full h-full object-cover"
+          src={`${import.meta.env.BASE_URL}images/logo-icon.png`}
+          alt="SustainPro icon"
+          className="h-9 w-9 object-contain shrink-0"
         />
+        <div>
+          <p className="font-bold text-base leading-tight text-emerald-400 tracking-tight">SustainPro</p>
+          <p className="text-[10px] uppercase tracking-widest text-emerald-600/70 leading-tight">Sustainability & Compliance</p>
+        </div>
       </div>
 
       <nav className="flex-1 py-6 px-4 space-y-6 overflow-y-auto">
