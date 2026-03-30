@@ -31,10 +31,7 @@ export function Sidebar() {
           alt="SustainPro icon"
           className="h-9 w-9 object-contain shrink-0"
         />
-        <div>
-          <p className="font-bold text-base leading-tight text-emerald-400 tracking-tight">SustainPro</p>
-          <p className="text-[10px] uppercase tracking-widest text-emerald-600/70 leading-tight">Sustainability & Compliance</p>
-        </div>
+        <p className="font-bold text-base text-emerald-400 tracking-tight">SustainPro</p>
       </div>
 
       <nav className="flex-1 py-6 px-4 space-y-6 overflow-y-auto">

@@ -71,10 +71,7 @@ export default function Login() {
               alt="SustainPro icon"
               className="h-12 w-12 object-contain shrink-0"
             />
-            <div>
-              <p className="text-2xl font-bold leading-tight text-emerald-400 tracking-tight">SustainPro</p>
-              <p className="text-[11px] uppercase tracking-widest text-emerald-600/70 leading-tight">Sustainability & Compliance</p>
-            </div>
+            <p className="text-2xl font-bold text-emerald-400 tracking-tight">SustainPro</p>
           </div>
 
           <div className="flex-1 flex flex-col justify-center">
