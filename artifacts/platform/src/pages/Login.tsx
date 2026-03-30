@@ -69,7 +69,7 @@ export default function Login() {
             <img
               src={`${import.meta.env.BASE_URL}images/logo.png`}
               alt="SustainPro"
-              className="h-10 w-auto object-contain" style={{ filter: "invert(1) hue-rotate(180deg)" }}
+              className="h-10 w-auto object-contain"
             />
           </div>
 
