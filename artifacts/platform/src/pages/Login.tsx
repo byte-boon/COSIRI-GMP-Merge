@@ -69,7 +69,7 @@ export default function Login() {
             <img
               src={`${import.meta.env.BASE_URL}images/logo.png`}
               alt="SustainPro"
-              className="h-10 w-auto object-contain"
+              className="h-14 w-auto object-contain"
             />
           </div>
 
