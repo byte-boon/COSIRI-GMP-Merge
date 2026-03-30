@@ -64,11 +64,11 @@ function NavItem({
   );
 }
 
-function SectionLabel({ label }: { label: string }) {
+function SectionLabel({ label, color = "emerald" }: { label: string; color?: "emerald" | "amber" }) {
   return (
     <div className="flex items-center gap-2 px-3 mb-1 mt-1">
-      <div className="w-[3px] h-4 bg-emerald-500 rounded-full shrink-0" />
-      <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-500/80">{label}</span>
+      <div className={`w-[3px] h-4 rounded-full shrink-0 ${color === "amber" ? "bg-amber-500" : "bg-emerald-500"}`} />
+      <span className={`text-[11px] font-bold uppercase tracking-widest ${color === "amber" ? "text-amber-500/80" : "text-emerald-500/80"}`}>{label}</span>
     </div>
   );
 }
@@ -189,7 +189,7 @@ export function Sidebar({ open, onClose }: { open?: boolean; onClose?: () => voi
 
           {/* GMP */}
           <div className="mb-4">
-            <SectionLabel label="GMP" />
+            <SectionLabel label="GMP" color="amber" />
             <div className="space-y-0.5 mt-2 pl-3 pr-3">
               <NavItem href="/gmp"             icon={<TrendingUp    className="w-4 h-4" />} label="Dashboard"      isActive={location === "/gmp"} onNavigate={nav} />
               <NavItem href="/gmp/assessments" icon={<FileText      className="w-4 h-4" />} label="Audits"         isActive={location.startsWith("/gmp/assessments")} onNavigate={nav} />
