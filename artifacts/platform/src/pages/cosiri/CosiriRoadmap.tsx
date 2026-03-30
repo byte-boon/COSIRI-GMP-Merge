@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useRoute, Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, Sparkles, RefreshCw, Users, DollarSign, Cpu, Target, TrendingUp, Clock, ChevronDown, ChevronUp, MapPin } from "lucide-react";
+import { ChevronLeft, Sparkles, RefreshCw, Users, DollarSign, Cpu, Target, TrendingUp, Clock, ChevronDown, ChevronUp, MapPin, Printer } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -203,11 +203,30 @@ export default function CosiriRoadmap() {
 
   const isGeneratingState = record?.status === "generating" || isGenerating;
 
+  const handlePrint = () => {
+    const prev = document.title;
+    if (record) document.title = `COSIRI Improvement Roadmap — ${record.companyName}`;
+    window.print();
+    document.title = prev;
+  };
+
   return (
     <AppLayout>
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
+
+        {/* Print-only document header */}
+        <div className="hidden print:block mb-4">
+          <h1 className="text-2xl font-bold">COSIRI Improvement Roadmap</h1>
+          {record && (
+            <p className="text-gray-600 mt-1 text-sm">
+              {record.companyName} · {record.industry} · Generated {new Date().toLocaleDateString()}
+            </p>
+          )}
+          <hr className="mt-3 border-gray-300" />
+        </div>
+
+        {/* Header (hidden when printing) */}
+        <div className="flex items-start justify-between gap-4 flex-wrap print:hidden">
           <div>
             <Link href={`/cosiri/results/${assessmentId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-3 transition-colors">
               <ChevronLeft className="w-4 h-4" />
@@ -221,19 +240,32 @@ export default function CosiriRoadmap() {
             )}
           </div>
 
-          <button
-            onClick={() => generate()}
-            disabled={isGeneratingState}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold shadow-sm hover:shadow-md hover:-translate-y-0.5 disabled:opacity-50 transition-all text-sm"
-          >
-            {isGeneratingState ? (
-              <><RefreshCw className="w-4 h-4 animate-spin" /> Generating…</>
-            ) : plan ? (
-              <><RefreshCw className="w-4 h-4" /> Regenerate</>
-            ) : (
-              <><Sparkles className="w-4 h-4" /> Generate with AI</>
+          <div className="flex items-center gap-2">
+            {plan && (
+              <button
+                type="button"
+                onClick={handlePrint}
+                title="Print / Save as PDF"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-background hover:bg-muted/50 font-medium text-sm transition-all"
+              >
+                <Printer className="w-4 h-4" />
+                Export PDF
+              </button>
             )}
-          </button>
+            <button
+              onClick={() => generate()}
+              disabled={isGeneratingState}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold shadow-sm hover:shadow-md hover:-translate-y-0.5 disabled:opacity-50 transition-all text-sm"
+            >
+              {isGeneratingState ? (
+                <><RefreshCw className="w-4 h-4 animate-spin" /> Generating…</>
+              ) : plan ? (
+                <><RefreshCw className="w-4 h-4" /> Regenerate</>
+              ) : (
+                <><Sparkles className="w-4 h-4" /> Generate with AI</>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Loading */}

@@ -16,8 +16,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background font-sans">
-      <Sidebar />
-      <main className="pl-64 w-full min-h-screen">
+      <div className="print:hidden">
+        <Sidebar />
+      </div>
+      <main className="pl-64 print:pl-0 w-full min-h-screen">
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
