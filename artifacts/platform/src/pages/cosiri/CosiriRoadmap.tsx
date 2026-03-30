@@ -103,11 +103,12 @@ function ActionCard({ action, phaseIdx }: { action: PlanAction; phaseIdx: number
             <span className="flex items-center gap-1"><Users className="w-3 h-3" />{action.owner}</span>
           </div>
         </div>
-        {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />}
+        <span className="print:hidden shrink-0 mt-0.5">
+          {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+        </span>
       </button>
 
-      {expanded && (
-        <div className="px-4 pb-4 space-y-4 border-t border-border/60 pt-4">
+      <div className={`px-4 pb-4 space-y-4 border-t border-border/60 pt-4 ${expanded ? "block" : "hidden"} print:!block`}>
           <p className="text-sm text-muted-foreground leading-relaxed">{action.description}</p>
 
           {/* Resources */}
@@ -154,7 +155,6 @@ function ActionCard({ action, phaseIdx }: { action: PlanAction; phaseIdx: number
             )}
           </div>
         </div>
-      )}
     </div>
   );
 }
