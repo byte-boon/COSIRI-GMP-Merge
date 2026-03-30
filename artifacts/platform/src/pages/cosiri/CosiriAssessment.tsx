@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
-import { CheckCircle2, Save, Activity, Info, TrendingUp, Building2, ChevronDown, ChevronUp } from "lucide-react";
+import { CheckCircle2, Save, Activity, Info, TrendingUp, Building2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { COSIRI_DATA, BUILDING_BLOCKS, BAND_DESCRIPTIONS } from "@/lib/cosiri-data";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -158,6 +158,14 @@ export default function CosiriAssessment() {
   const dimensionsInBlock = COSIRI_DATA.filter(d => d.block === activeBlock);
   const totalAnswered = Object.keys(answers).length;
   const progress = Math.round((totalAnswered / COSIRI_DATA.length) * 100);
+  const currentBlockIdx = BUILDING_BLOCKS.indexOf(activeBlock);
+  const isFirstBlock = currentBlockIdx === 0;
+  const isLastBlock = currentBlockIdx === BUILDING_BLOCKS.length - 1;
+
+  const goToBlock = (idx: number) => {
+    setActiveBlock(BUILDING_BLOCKS[idx]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const liveScore = totalAnswered > 0
     ? Object.values(answers).reduce((a, b) => a + b, 0) / totalAnswered
@@ -604,15 +612,67 @@ export default function CosiriAssessment() {
           ); })}
 
 
-          <div className="pt-6 border-t border-border flex justify-end">
-            <button
-              onClick={handleSubmit}
-              disabled={progress !== 100 || isCreating || isSaving || !draftId}
-              className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20 hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-50 transition-all flex items-center gap-2"
-            >
-              <Save className="w-5 h-5" />
-              {isSaving ? "Saving..." : "Submit Assessment"}
-            </button>
+          {/* ── Pillar Navigation ── */}
+          <div className="pt-6 border-t border-border flex items-center justify-between gap-4">
+
+            {/* Previous */}
+            {!isFirstBlock ? (
+              <button
+                type="button"
+                onClick={() => goToBlock(currentBlockIdx - 1)}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border bg-background hover:bg-muted/50 font-medium text-sm transition-all"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Previous
+              </button>
+            ) : (
+              <div />
+            )}
+
+            {/* Step dots */}
+            <div className="flex items-center gap-2">
+              {BUILDING_BLOCKS.map((block, i) => {
+                const dims = COSIRI_DATA.filter(d => d.block === block);
+                const done = dims.every(d => answers[d.id] !== undefined);
+                const active = i === currentBlockIdx;
+                return (
+                  <button
+                    key={block}
+                    type="button"
+                    onClick={() => goToBlock(i)}
+                    title={block}
+                    className={`rounded-full transition-all ${
+                      active
+                        ? "w-6 h-2.5 bg-primary"
+                        : done
+                        ? "w-2.5 h-2.5 bg-primary/40 hover:bg-primary/60"
+                        : "w-2.5 h-2.5 bg-border hover:bg-muted-foreground/40"
+                    }`}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Next or Submit */}
+            {!isLastBlock ? (
+              <button
+                type="button"
+                onClick={() => goToBlock(currentBlockIdx + 1)}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium text-sm shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
+              >
+                Next
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                disabled={progress !== 100 || isCreating || isSaving || !draftId}
+                className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20 hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-50 transition-all flex items-center gap-2"
+              >
+                <Save className="w-5 h-5" />
+                {isSaving ? "Saving..." : "Submit Assessment"}
+              </button>
+            )}
           </div>
         </div>
       </div>
