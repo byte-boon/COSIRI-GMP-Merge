@@ -9,6 +9,7 @@ import {
   LogOut,
   MoreHorizontal,
   Leaf,
+  MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -150,6 +151,12 @@ export function Sidebar() {
               badge={completedCosiri > 0 ? completedCosiri : undefined}
               badgeColor="green"
               isActive={location.startsWith("/cosiri/report")}
+            />
+            <NavItem
+              href="/cosiri/roadmaps"
+              icon={<MapPin className="w-4 h-4" />}
+              label="Improvement Roadmap"
+              isActive={location.startsWith("/cosiri/roadmap")}
             />
           </div>
         </div>

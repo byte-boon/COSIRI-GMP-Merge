@@ -14,6 +14,7 @@ import CosiriResults from "@/pages/cosiri/CosiriResults";
 import CosiriReport from "@/pages/cosiri/CosiriReport";
 import CosiriReports from "@/pages/cosiri/CosiriReports";
 import CosiriRoadmap from "@/pages/cosiri/CosiriRoadmap";
+import CosiriRoadmapList from "@/pages/cosiri/CosiriRoadmapList";
 import GmpDashboard from "@/pages/gmp/GmpDashboard";
 import GmpReports from "@/pages/gmp/GmpReports";
 import GmpAssessmentList from "@/pages/gmp/GmpAssessmentList";
@@ -46,6 +47,7 @@ function Router() {
       <Route path="/cosiri/results/:id" component={CosiriResults} />
       <Route path="/cosiri/reports" component={CosiriReports} />
       <Route path="/cosiri/report/:id" component={CosiriReport} />
+      <Route path="/cosiri/roadmaps" component={CosiriRoadmapList} />
       <Route path="/cosiri/roadmap/:id" component={CosiriRoadmap} />
 
       {/* GMP Routes */}
