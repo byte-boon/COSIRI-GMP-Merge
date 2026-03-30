@@ -65,11 +65,12 @@ export default function Login() {
           className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-luminosity"
         />
         <div className="relative z-20 flex flex-col h-full px-10 py-10">
-          <div className="mb-12">
+          <div className="mb-12 -mx-10 -mt-10 overflow-hidden">
             <img
               src={`${import.meta.env.BASE_URL}images/logo.png`}
               alt="SustainPro"
-              className="h-14 w-auto object-contain"
+              className="w-full object-cover"
+              style={{ height: "72px" }}
             />
           </div>
 
