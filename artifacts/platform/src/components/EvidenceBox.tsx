@@ -2,8 +2,37 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Paperclip, Upload, Sparkles, Trash2, RefreshCw,
-  FileText, CheckCircle2, AlertCircle, File, X
+  FileText, CheckCircle2, AlertCircle, File, Info,
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+
+/* ── Per-dimension evidence guidance ── */
+const EVIDENCE_HINTS: Record<string, { title: string; examples: string[] }> = {
+  D1:  { title: "Strategy & Target Setting",   examples: ["Sustainability strategy document",  "Board-approved SBT commitments", "Annual sustainability targets report", "Corporate ESG roadmap"] },
+  D2:  { title: "ESG Integration",             examples: ["Integrated annual report",           "TCFD disclosure",                 "Board ESG committee terms of reference", "ESG KPI dashboard"] },
+  D3:  { title: "Green Business Modelling",    examples: ["Business model canvas (sustainability)", "Green revenue breakdown", "Product sustainability assessment", "New green-service launch plan"] },
+  D4:  { title: "Capital Allocation",          examples: ["Green finance framework",             "Capex allocation showing sustainability criteria", "Investment policy document", "Sustainability-linked loan terms"] },
+  D5:  { title: "Physical Climate Risk",       examples: ["TCFD physical risk assessment",       "Flood / heat stress scenario analysis", "Climate risk register", "Site-level resilience plan"] },
+  D6:  { title: "Transition Risk",             examples: ["Carbon price sensitivity analysis",   "Energy transition roadmap",       "Stranded-asset assessment", "Regulatory compliance plan"] },
+  D7:  { title: "Compliance Risk",             examples: ["Environmental compliance certificate","Regulatory filing records",       "Legal & compliance risk register", "Environmental permit"] },
+  D8:  { title: "Reputation Risk",             examples: ["Stakeholder engagement report",       "ESG rating agency scorecard",     "Media / social monitoring summary", "Customer sustainability survey"] },
+  D9:  { title: "GHG Emissions",               examples: ["GHG inventory (Scope 1/2/3)",         "Third-party verification report", "CDP submission",                     "Science-based targets letter"] },
+  D10: { title: "Resources",                   examples: ["Energy consumption report",           "Water usage data",                "ISO 50001 certificate",              "Utility meter / billing data"] },
+  D11: { title: "Material Waste",              examples: ["Waste management records",            "Waste diversion / recycling rates","ISO 14001 certificate",             "Landfill diversion data"] },
+  D12: { title: "Pollution",                   examples: ["Air / water quality monitoring data", "Effluent discharge records",      "Environmental permit approval",       "Spill incident log"] },
+  D13: { title: "Supplier Assessment",         examples: ["Supplier sustainability questionnaire","Supplier audit report",          "EcoVadis or similar scorecard",      "Supplier code of conduct"] },
+  D14: { title: "Sustainable Procurement",     examples: ["Procurement policy with ESG criteria","Approved green-supplier list",   "Sustainable spend analysis",          "Tender evaluation scorecard"] },
+  D15: { title: "Transportation",              examples: ["Logistics emissions report",          "Fleet electrification plan",      "Freight carbon footprint data",       "Last-mile delivery policy"] },
+  D16: { title: "Supply-Chain Planning",       examples: ["Supply-chain sustainability map",     "Demand forecast with ESG factors","Inventory optimisation report",       "Network resilience study"] },
+  D17: { title: "Product Design",              examples: ["Life Cycle Assessment (LCA) report",  "Eco-design guidelines",           "Material safety data sheets",         "Design-for-disassembly specs"] },
+  D18: { title: "Circular Process",            examples: ["Take-back / returns scheme records",  "Recycling rate report",           "Circular design policy",             "End-of-life management data"] },
+  D19: { title: "Technology Adoption",         examples: ["Clean-tech investment plan",          "Renewable energy contract (PPA)", "IoT monitoring system records",       "Digital decarbonisation roadmap"] },
+  D20: { title: "Transparency",                examples: ["ESG data platform screenshots",       "Sustainability dashboard export",  "Data governance policy",             "Supply-chain traceability records"] },
+  D21: { title: "Workforce Development",       examples: ["Sustainability training records",     "Competency framework document",   "L&D spend on ESG topics",            "Employee certification certificates"] },
+  D22: { title: "Leadership Involvement",      examples: ["Board minutes with ESG agenda items","Executive ESG KPI scorecards",   "CEO/Chair sustainability statement",  "Sustainability committee charter"] },
+  D23: { title: "External Communication",      examples: ["Published sustainability report",     "GRI / SASB content index",        "Press releases on ESG initiatives",  "Stakeholder feedback summary"] },
+  D24: { title: "Governance Structure",        examples: ["Sustainability governance charter",   "Committee terms of reference",    "Policy & accountability matrix",      "ESG policy register"] },
+};
 
 interface EvidenceItem {
   id: number;
@@ -135,6 +164,8 @@ export function EvidenceBox({ assessmentId, dimensionId, dimensionName }: Eviden
   const hasEvidence = evidence.length > 0;
   const analyzedCount = evidence.filter(e => e.summaryStatus === "completed").length;
 
+  const hint = EVIDENCE_HINTS[dimensionId];
+
   return (
     <div className="mt-4 border-t border-border/60 pt-4">
       <button
@@ -147,6 +178,37 @@ export function EvidenceBox({ assessmentId, dimensionId, dimensionName }: Eviden
           <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
             Evidence Attachments
           </span>
+          {hint && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    onClick={e => e.stopPropagation()}
+                    className="inline-flex items-center"
+                  >
+                    <Info className="w-3.5 h-3.5 text-primary/50 hover:text-primary transition-colors cursor-default" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  sideOffset={10}
+                  className="bg-card border border-border shadow-xl rounded-xl p-4 max-w-[280px] z-50"
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-primary mb-2">
+                    Suggested evidence for {hint.title}
+                  </p>
+                  <ul className="space-y-1.5">
+                    {hint.examples.map((ex) => (
+                      <li key={ex} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                        <span className="text-primary mt-0.5 shrink-0">·</span>
+                        {ex}
+                      </li>
+                    ))}
+                  </ul>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           {hasEvidence && (
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
               {evidence.length} file{evidence.length !== 1 ? "s" : ""}
@@ -190,9 +252,20 @@ export function EvidenceBox({ assessmentId, dimensionId, dimensionName }: Eviden
                 <p className="text-sm text-muted-foreground">
                   Drag files here or <span className="text-primary font-medium">browse</span>
                 </p>
-                <p className="text-xs text-muted-foreground/60">
-                  PDF, Word, Excel, CSV, images — evidence documents for <em>{dimensionName}</em>
-                </p>
+                <p className="text-xs text-muted-foreground/60">PDF, Word, Excel, CSV, images</p>
+                {hint && (
+                  <div className="mt-1 px-3 py-2 rounded-lg bg-primary/5 border border-primary/10 text-left w-full">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-primary/70 mb-1">
+                      Suggested for {hint.title}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
+                      {hint.examples.slice(0, 2).join(" · ")}
+                      {hint.examples.length > 2 && (
+                        <span className="text-primary/60"> +{hint.examples.length - 2} more</span>
+                      )}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
