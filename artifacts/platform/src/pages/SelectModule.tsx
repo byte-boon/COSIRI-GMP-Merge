@@ -100,7 +100,7 @@ export default function SelectModule() {
             <Building className="w-4.5 h-4.5 text-white" />
           </div>
           <div>
-            <p className="text-sm font-bold text-foreground leading-tight">Nexus Platform</p>
+            <p className="text-sm font-bold text-foreground leading-tight">SustainPro</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Sustainability & Compliance</p>
           </div>
         </div>

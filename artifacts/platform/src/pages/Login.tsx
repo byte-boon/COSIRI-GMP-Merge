@@ -70,7 +70,7 @@ export default function Login() {
               <Building className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-display font-bold text-sidebar-foreground leading-tight">Nexus Platform</h1>
+              <h1 className="text-xl font-display font-bold text-sidebar-foreground leading-tight">SustainPro</h1>
               <p className="text-[11px] text-sidebar-foreground/50 uppercase tracking-widest">Sustainability & Compliance</p>
             </div>
           </div>
