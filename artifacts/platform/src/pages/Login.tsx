@@ -66,13 +66,11 @@ export default function Login() {
         />
         <div className="relative z-20 flex flex-col h-full px-10 py-10">
           <div className="mb-12">
-            <div className="inline-block bg-white/95 rounded-2xl px-4 py-2.5 shadow-sm">
-              <img
-                src={`${import.meta.env.BASE_URL}images/logo.png`}
-                alt="SustainPro"
-                className="h-10 w-auto object-contain"
-              />
-            </div>
+            <img
+              src={`${import.meta.env.BASE_URL}images/logo.png`}
+              alt="SustainPro"
+              className="h-10 w-auto object-contain" style={{ filter: "invert(1) hue-rotate(180deg)" }}
+            />
           </div>
 
           <div className="flex-1 flex flex-col justify-center">

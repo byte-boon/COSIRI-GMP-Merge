@@ -25,11 +25,11 @@ export function Sidebar() {
 
   return (
     <aside className="w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col h-screen fixed left-0 top-0 z-20 transition-all shadow-xl">
-      <div className="h-16 flex items-center px-5 border-b border-sidebar-border bg-white/95">
+      <div className="h-16 flex items-center px-5 border-b border-sidebar-border bg-sidebar-accent/30">
         <img
           src={`${import.meta.env.BASE_URL}images/logo.png`}
           alt="SustainPro"
-          className="h-10 w-auto object-contain"
+          className="h-10 w-auto object-contain" style={{ filter: "invert(1) hue-rotate(180deg)" }}
         />
       </div>
 
