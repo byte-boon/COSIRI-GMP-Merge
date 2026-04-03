@@ -118,7 +118,7 @@ export default function CosiriAssessment() {
   const [, setLocation] = useLocation();
   const { company } = useCompany();
   const [answers, setAnswers] = useState<Record<string, number>>({});
-  const [activeBlock, setActiveBlock] = useState<string>(BUILDING_BLOCKS[0]);
+  const [activeBlock, setActiveBlock] = useState<(typeof BUILDING_BLOCKS)[number]>(BUILDING_BLOCKS[0]);
   const [draftId, setDraftId] = useState<number | null>(null);
   const [draftCreating, setDraftCreating] = useState(false);
   const [profileOpen, setProfileOpen] = useState(true);
@@ -171,7 +171,7 @@ export default function CosiriAssessment() {
     ? Object.values(answers).reduce((a, b) => a + b, 0) / totalAnswered
     : null;
 
-  const blockAvg = (block: string) => {
+  const blockAvg = (block: (typeof BUILDING_BLOCKS)[number]) => {
     const dims = COSIRI_DATA.filter(d => d.block === block);
     const scored = dims.filter(d => answers[d.id] !== undefined);
     if (scored.length === 0) return null;
@@ -679,3 +679,4 @@ export default function CosiriAssessment() {
     </AppLayout>
   );
 }
+

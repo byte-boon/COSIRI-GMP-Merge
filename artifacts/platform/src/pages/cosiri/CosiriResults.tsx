@@ -44,7 +44,7 @@ export default function CosiriResults() {
   const [, params] = useRoute("/cosiri/results/:id");
   const id = params?.id ? parseInt(params.id) : 0;
 
-  const { data: assessment, isLoading } = useGetCosiriAssessment(id, { query: { enabled: !!id } });
+  const { data: assessment, isLoading } = useGetCosiriAssessment(id, { query: { enabled: !!id } as any });
 
   if (isLoading) return <AppLayout><div className="flex justify-center py-20"><Activity className="w-8 h-8 animate-spin text-primary" /></div></AppLayout>;
   if (!assessment) return <AppLayout><div>Assessment not found</div></AppLayout>;
@@ -471,3 +471,4 @@ export default function CosiriResults() {
     </AppLayout>
   );
 }
+

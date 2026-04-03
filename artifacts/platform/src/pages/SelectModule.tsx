@@ -59,7 +59,7 @@ const MODULES = [
 
 export default function SelectModule() {
   const [, setLocation] = useLocation();
-  const { company, sessionToken, updateModules, logout } = useCompany();
+  const { company, updateModules, logout } = useCompany();
   const [selected, setSelected] = useState<"cosiri" | "gmp" | "both" | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,10 +71,7 @@ export default function SelectModule() {
     try {
       const res = await fetch(`${BASE}/api/companies/${company.id}/modules`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...(sessionToken ? { "x-session-token": sessionToken } : {}),
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ modules: selected }),
       });
       const body = await res.json();
@@ -110,7 +107,7 @@ export default function SelectModule() {
               Signed in as <span className="font-medium text-foreground">{company.name}</span>
             </span>
             <button
-              onClick={() => { logout(); setLocation("/login"); }}
+              onClick={() => { void logout(); setLocation("/login"); }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-destructive hover:border-destructive/30 transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" /> Sign out
@@ -210,3 +207,5 @@ export default function SelectModule() {
     </div>
   );
 }
+
+

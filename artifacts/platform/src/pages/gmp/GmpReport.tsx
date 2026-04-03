@@ -99,7 +99,7 @@ export default function GmpReport() {
   const id = params?.id ? parseInt(params.id) : 0;
   const { company } = useCompany();
 
-  const { data: assessment, isLoading } = useGetGmpAssessment(id, { query: { enabled: !!id } });
+  const { data: assessment, isLoading } = useGetGmpAssessment(id, { query: { enabled: !!id } as any });
   const { data: allFindings } = useListGmpFindings();
   const [capaModal, setCapaModal] = useState<{ itemId: string; itemLabel: string; itemDescription?: string; score: number } | null>(null);
 
@@ -594,7 +594,7 @@ export default function GmpReport() {
                     <tr key={f.id} className="hover:bg-muted/20">
                       <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{f.itemId}</td>
                       <td className="px-4 py-3 text-sm text-foreground max-w-xs truncate">{f.description}</td>
-                      <td className="px-4 py-3 text-xs capitalize text-muted-foreground">{f.type.replace("_", " ")}</td>
+                      <td className="px-4 py-3 text-xs capitalize text-muted-foreground">{(f.type ?? "finding").replace("_", " ")}</td>
                       <td className="px-4 py-3">
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border capitalize ${sevBadge}`}>{f.severity}</span>
                       </td>
@@ -663,3 +663,4 @@ export default function GmpReport() {
     </AppLayout>
   );
 }
+

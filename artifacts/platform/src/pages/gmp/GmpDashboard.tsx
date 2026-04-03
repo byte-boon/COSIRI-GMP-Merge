@@ -78,7 +78,7 @@ export default function GmpDashboard() {
               <div key={a.id} className="p-4 flex items-center justify-between hover:bg-muted/20 transition-colors">
                 <div>
                   <p className="font-semibold">{a.scope}</p>
-                  <p className="text-xs text-muted-foreground">{new Date(a.startDate).toLocaleDateString()}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(a.startDate ?? Date.now()).toLocaleDateString()}</p>
                 </div>
                 <span className={`px-2.5 py-1 rounded-full text-xs font-bold capitalize ${a.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                   {a.status}
@@ -116,3 +116,4 @@ export default function GmpDashboard() {
     </AppLayout>
   );
 }
+

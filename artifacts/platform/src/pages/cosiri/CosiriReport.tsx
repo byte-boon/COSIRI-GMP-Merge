@@ -18,7 +18,7 @@ import {
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-type InsightType = "executive_summary" | "gap_analysis" | "roadmap" | "benchmarking" | "tier_matrix" | "transformation_roadmap";
+type InsightType = "executive_summary" | "gap_analysis" | "roadmap";
 
 interface EvidenceItem {
   id: number; dimensionId: string; fileName: string;
@@ -154,9 +154,9 @@ export default function CosiriReport() {
   const id = params?.id ? parseInt(params.id) : 0;
   const [generating, setGenerating] = useState<InsightType | null>(null);
 
-  const { data: insights, refetch } = useGetLatestCosiriInsights(id, { query: { enabled: !!id } });
+  const { data: insights, refetch } = useGetLatestCosiriInsights(id, { query: { enabled: !!id } as any });
   const { mutateAsync: generateInsight } = useGenerateCosiriInsight();
-  const { data: assessment } = useGetCosiriAssessment(id, { query: { enabled: !!id } });
+  const { data: assessment } = useGetCosiriAssessment(id, { query: { enabled: !!id } as any });
 
   const { data: siteProfile } = useQuery<SiteProfile>({
     queryKey: ["site-profile", id],
@@ -700,7 +700,7 @@ export default function CosiriReport() {
             <p className="text-xs text-red-600 mt-1">Below industry avg</p>
           </div>
         </div>
-        <AiSection type="benchmarking" label="Peer Benchmarking Analysis" insights={insights as any} onGenerate={handleGenerate} generating={generating} />
+        <AiSection type="gap_analysis" label="Peer Benchmarking Analysis" insights={insights as any} onGenerate={handleGenerate} generating={generating} />
       </div>
 
       {/* Prioritisation Matrix */}
@@ -756,13 +756,13 @@ export default function CosiriReport() {
             </table>
           </div>
         </div>
-        <AiSection type="tier_matrix" label="TIER Prioritisation Analysis" insights={insights as any} onGenerate={handleGenerate} generating={generating} />
+        <AiSection type="executive_summary" label="TIER Prioritisation Analysis" insights={insights as any} onGenerate={handleGenerate} generating={generating} />
       </div>
 
       {/* Transformation Roadmap */}
       <div className={`${card} mb-8`}>
         <SectionHeader num={5} icon={<TrendingUp className="w-4 h-4" />} title="Transformation Roadmap" subtitle="Phased improvement plan — what to do next" />
-        <AiSection type="transformation_roadmap" label="Transformation Roadmap" insights={insights as any} onGenerate={handleGenerate} generating={generating} />
+        <AiSection type="roadmap" label="Transformation Roadmap" insights={insights as any} onGenerate={handleGenerate} generating={generating} />
       </div>
 
       {/* ────── Appendix: Evidence ────── */}
@@ -824,3 +824,5 @@ export default function CosiriReport() {
     </AppLayout>
   );
 }
+
+

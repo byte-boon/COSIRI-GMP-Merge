@@ -1,49 +1,32 @@
-# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+# Dependencies
+node_modules/
 
-# compiled output
-dist
-tmp
-out-tsc
+# Build output
+artifacts/api-server/dist/
+artifacts/platform/dist/
+dist/
+out/
+coverage/
 *.tsbuildinfo
-.expo
-.expo-shared
 
-# dependencies
-node_modules
-
-# IDEs and editors
-/.idea
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
-
-# IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# misc
-/.sass-cache
-/connect.lock
-/coverage
-/libpeerconnection.log
-npm-debug.log
-yarn-error.log
-testem.log
-/typings
-
-# System Files
+# Editors and OS
+.vscode/
+.idea/
 .DS_Store
 Thumbs.db
 
-.cursor/rules/nx-rules.mdc
-.github/instructions/nx.instructions.md
+# Local env
+.env
+.env.local
+.env.*.local
 
-# Replit
+# Root local-only artifacts
 .cache/
-.local/
+.cursor/
+no-deploy/root-artifacts/
+no-deploy/replit-archive/
+no-deploy/sandbox/
+
+# Legacy Replit/workbench leftovers
+.replit-artifact/
+artifacts/**/.replit-artifact/

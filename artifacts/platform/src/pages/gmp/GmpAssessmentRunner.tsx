@@ -8,7 +8,6 @@ import {
 import { AppLayout } from "@/components/layout/AppLayout";
 import { GMP_SECTIONS, calculateGmpScore, type GmpResponse, type GmpAttachment } from "@/lib/gmp-data";
 import { useGetGmpAssessment, useSaveGmpResponses } from "@workspace/api-client-react";
-import { useCompany } from "@/contexts/CompanyContext";
 import RaiseCapaModal, { scoreRequiresCapa, scoreToSeverity } from "@/components/RaiseCapaModal";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -53,13 +52,11 @@ function ScoreTooltip({ text, longLabel, score }: { text: string; longLabel: str
 
 // ── File attachment upload ───────────────────────────────────────────────────
 function AttachmentUploader({
-  itemId, attachments, onAttachmentsChange, sessionToken
+  itemId, attachments, onAttachmentsChange
 }: {
   itemId: string;
   attachments: GmpAttachment[];
-  onAttachmentsChange: (itemId: string, attachments: GmpAttachment[]) => void;
-  sessionToken: string | null;
-}) {
+  onAttachmentsChange: (itemId: string, attachments: GmpAttachment[]) => void;}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -72,10 +69,7 @@ function AttachmentUploader({
       // Step 1: Get presigned URL
       const urlRes = await fetch(`${BASE}/api/storage/uploads/request-url`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(sessionToken ? { "x-session-token": sessionToken } : {}),
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
       });
       if (!urlRes.ok) throw new Error("Failed to get upload URL");
@@ -102,7 +96,7 @@ function AttachmentUploader({
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";
     }
-  }, [uploading, attachments, itemId, onAttachmentsChange, sessionToken]);
+  }, [uploading, attachments, itemId, onAttachmentsChange]);
 
   const handleRemove = (path: string) => {
     onAttachmentsChange(itemId, attachments.filter(a => a.path !== path));
@@ -169,9 +163,9 @@ function AttachmentUploader({
 export default function GmpAssessmentRunner() {
   const [, params] = useRoute("/gmp/assessments/:id");
   const id = params?.id ? parseInt(params.id) : 0;
-  const { sessionToken } = useCompany();
 
-  const { data: assessment, isLoading } = useGetGmpAssessment(id, { query: { enabled: !!id } });
+
+  const { data: assessment, isLoading } = useGetGmpAssessment(id, { query: { enabled: !!id } as any });
   const { mutateAsync: saveResponses, isPending: isSaving } = useSaveGmpResponses();
 
   const [responses, setResponses] = useState<Record<string, GmpResponse>>({});
@@ -526,7 +520,7 @@ export default function GmpAssessmentRunner() {
                         itemId={item.id}
                         attachments={itemAttachments}
                         onAttachmentsChange={setAttachments}
-                        sessionToken={sessionToken}
+
                       />
                     </div>
 
@@ -615,3 +609,7 @@ export default function GmpAssessmentRunner() {
     </AppLayout>
   );
 }
+
+
+
+

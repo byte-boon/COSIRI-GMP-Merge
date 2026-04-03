@@ -1,71 +1,83 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export interface Company {
   id: number;
   name: string;
+  displayName?: string | null;
+  username?: string | null;
   industry: string;
   email?: string | null;
   modules: string;
+  billingPlan?: string;
+  billingStatus?: string;
+  trialEndsAt?: string | null;
   createdAt: string;
 }
 
 type CompanyContextType = {
   company: Company | null;
-  sessionToken: string | null;
-  setAuth: (company: Company, token: string) => void;
+  setAuth: (company: Company) => void;
   updateModules: (modules: string) => void;
   isLoading: boolean;
-  logout: () => void;
+  logout: () => Promise<void>;
 };
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 export function CompanyProvider({ children }: { children: React.ReactNode }) {
-  const [company, setCompanyState] = useState<Company | null>(null);
-  const [sessionToken, setSessionTokenState] = useState<string | null>(null);
+  const [company, setCompany] = useState<Company | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedCompany = localStorage.getItem("platform_company");
-    const storedToken = localStorage.getItem("platform_session_token");
-    if (storedCompany) {
+    let ignore = false;
+
+    async function loadSession() {
       try {
-        setCompanyState(JSON.parse(storedCompany));
-      } catch (e) {
-        console.error("Failed to parse company from local storage", e);
+        const response = await fetch(`${BASE}/api/auth/me`, { credentials: "include" });
+        if (!response.ok) {
+          if (!ignore) setCompany(null);
+          return;
+        }
+        const body = await response.json();
+        if (!ignore) {
+          setCompany(body.company);
+        }
+      } catch {
+        if (!ignore) setCompany(null);
+      } finally {
+        if (!ignore) setIsLoading(false);
       }
     }
-    if (storedToken) {
-      setSessionTokenState(storedToken);
-    }
-    setIsLoading(false);
+
+    void loadSession();
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
-  const setAuth = (newCompany: Company, token: string) => {
-    setCompanyState(newCompany);
-    setSessionTokenState(token);
-    localStorage.setItem("platform_company", JSON.stringify(newCompany));
-    localStorage.setItem("platform_session_token", token);
+  const setAuth = (nextCompany: Company) => {
+    setCompany(nextCompany);
   };
 
   const updateModules = (modules: string) => {
-    setCompanyState(prev => {
-      if (!prev) return prev;
-      const updated = { ...prev, modules };
-      localStorage.setItem("platform_company", JSON.stringify(updated));
-      return updated;
-    });
+    setCompany((previous) => (previous ? { ...previous, modules } : previous));
   };
 
-  const logout = () => {
-    setCompanyState(null);
-    setSessionTokenState(null);
-    localStorage.removeItem("platform_company");
-    localStorage.removeItem("platform_session_token");
+  const logout = async () => {
+    try {
+      await fetch(`${BASE}/api/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {}
+    setCompany(null);
   };
 
   return (
-    <CompanyContext.Provider value={{ company, sessionToken, setAuth, updateModules, isLoading, logout }}>
+    <CompanyContext.Provider value={{ company, setAuth, updateModules, isLoading, logout }}>
       {children}
     </CompanyContext.Provider>
   );

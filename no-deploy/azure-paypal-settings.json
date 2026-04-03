@@ -1,0 +1,13 @@
+[
+  { "name": "PAYPAL_CLIENT_ID", "value": "", "slotSetting": false },
+  { "name": "PAYPAL_SECRET_KEY", "value": "", "slotSetting": false },
+  { "name": "PAYPAL_MODE", "value": "live", "slotSetting": false },
+  { "name": "PAYPAL_WEBHOOK_ID", "value": "", "slotSetting": false },
+  { "name": "PAYPAL_WEBHOOK_URL", "value": "https://cosiri.ngstco.com/api/billing/paypal-webhook", "slotSetting": false },
+  { "name": "PAYPAL_PLAN_INDIVIDUAL_ANNUAL", "value": "", "slotSetting": false },
+  { "name": "PAYPAL_PLAN_INDIVIDUAL_MONTHLY", "value": "", "slotSetting": false },
+  { "name": "PAYPAL_PLAN_PROFESSIONAL_ANNUAL", "value": "", "slotSetting": false },
+  { "name": "PAYPAL_PLAN_PROFESSIONAL_MONTHLY", "value": "", "slotSetting": false },
+  { "name": "PAYPAL_PLAN_ENTERPRISE_ANNUAL", "value": "", "slotSetting": false },
+  { "name": "PAYPAL_PLAN_ENTERPRISE_MONTHLY", "value": "", "slotSetting": false }
+]

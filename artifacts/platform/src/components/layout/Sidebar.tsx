@@ -239,7 +239,7 @@ export function Sidebar({ open, onClose }: { open?: boolean; onClose?: () => voi
           <div className="px-3 pb-3">
             <button
               onClick={() => {
-                logout();
+                void logout();
                 window.location.href = import.meta.env.BASE_URL;
               }}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-sidebar-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-all"
@@ -254,3 +254,4 @@ export function Sidebar({ open, onClose }: { open?: boolean; onClose?: () => voi
     </>
   );
 }
+

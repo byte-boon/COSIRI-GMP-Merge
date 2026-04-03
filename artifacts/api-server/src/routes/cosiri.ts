@@ -7,10 +7,17 @@ import { ObjectStorageService } from "../lib/objectStorage.js";
 
 const router = Router();
 
-const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-});
+function getOpenAIClient() {
+  const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  return new OpenAI({
+    apiKey,
+    baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+  });
+}
 
 // ---- Dimension metadata (minimal, for AI prompts) ----
 const DIMENSION_META: Record<string, { name: string; block: string }> = {
@@ -222,6 +229,11 @@ For each initiative, include: recommended solutions/technologies, estimated reso
 
 router.post("/cosiri/assessments/:id/ai/generate", async (req, res) => {
   try {
+    const client = getOpenAIClient();
+    if (!client) {
+      return res.status(503).json({ error: "AI assistance is not configured" });
+    }
+
     const assessmentId = parseInt(req.params.id);
     if (isNaN(assessmentId)) return res.status(400).json({ error: "Invalid id" });
 
@@ -279,7 +291,7 @@ router.post("/cosiri/assessments/:id/ai/generate", async (req, res) => {
 
     // Generate with OpenAI
     const model = "gpt-4o";
-    const response = await openai.chat.completions.create({
+    const response = await client.chat.completions.create({
       model,
       messages: [{ role: "user", content: prompt }],
       max_tokens: 4096,
@@ -436,6 +448,11 @@ router.delete("/cosiri/evidence/:id", async (req, res) => {
 // POST analyze a single evidence file with AI
 router.post("/cosiri/evidence/:id/analyze", async (req, res) => {
   try {
+    const client = getOpenAIClient();
+    if (!client) {
+      return res.status(503).json({ error: "AI assistance is not configured" });
+    }
+
     const id = parseInt(req.params.id);
     const [evidence] = await db.select().from(cosiriEvidence).where(eq(cosiriEvidence.id, id));
     if (!evidence) return res.status(404).json({ error: "Evidence not found" });
@@ -474,7 +491,7 @@ Please provide a concise, structured evidence summary (3-5 sentences) covering:
 
 Keep the summary factual, specific, and directly tied to the COSIRI dimension criteria.`;
 
-    const completion = await openai.chat.completions.create({
+    const completion = await client.chat.completions.create({
       model: "gpt-4o",
       messages: [{ role: "user", content: prompt }],
       max_tokens: 400,
@@ -553,6 +570,11 @@ Rules:
 
 router.post("/cosiri/assessments/:id/improvement-plan", async (req, res) => {
   try {
+    const client = getOpenAIClient();
+    if (!client) {
+      return res.status(503).json({ error: "AI assistance is not configured" });
+    }
+
     const assessmentId = parseInt(req.params.id);
     if (isNaN(assessmentId)) return res.status(400).json({ error: "Invalid id" });
 
@@ -608,7 +630,7 @@ router.post("/cosiri/assessments/:id/improvement-plan", async (req, res) => {
       model: "gpt-4o",
     }).returning();
 
-    const response = await openai.chat.completions.create({
+    const response = await client.chat.completions.create({
       model: "gpt-4o",
       messages: [{ role: "user", content: prompt }],
       max_tokens: 4096,

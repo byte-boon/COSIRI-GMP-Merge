@@ -50,7 +50,7 @@ export default function GmpAssessmentList() {
               <tr key={a.id} className="hover:bg-muted/10 transition-colors">
                 <td className="px-6 py-4 font-mono text-sm text-muted-foreground">{a.auditId}</td>
                 <td className="px-6 py-4 font-medium">{a.scope}</td>
-                <td className="px-6 py-4 text-sm">{new Date(a.startDate).toLocaleDateString()}</td>
+                <td className="px-6 py-4 text-sm">{new Date(a.startDate ?? Date.now()).toLocaleDateString()}</td>
                 <td className="px-6 py-4">
                   <span className={`px-2.5 py-1 rounded-full text-xs font-bold capitalize ${a.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                     {a.status}
@@ -69,3 +69,4 @@ export default function GmpAssessmentList() {
     </AppLayout>
   );
 }
+

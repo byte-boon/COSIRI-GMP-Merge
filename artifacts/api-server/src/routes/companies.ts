@@ -1,75 +1,109 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { companies } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
+import { requireCompanyAuth, setCompanySession, toSafeCompany } from "../middlewares/auth.js";
 
 const router = Router();
+
+function buildUsername(email: string) {
+  const localPart = email.split("@")[0]?.trim().toLowerCase() || "company";
+  return localPart.replace(/[^a-z0-9._-]/g, "-");
+}
 
 router.post("/companies", async (req, res) => {
   try {
     const { name, industry, email, password } = req.body;
-    if (!name || !industry) {
-      return res.status(400).json({ error: "name and industry are required" });
+    const normalizedEmail = String(email ?? "").trim().toLowerCase();
+
+    if (!name || !industry || !normalizedEmail) {
+      return res.status(400).json({ error: "name, industry, and email are required" });
     }
-    if (!password || password.length < 8) {
+    if (!password || String(password).length < 8) {
       return res.status(400).json({ error: "password must be at least 8 characters" });
     }
 
-    const existingEmail = email
-      ? await db.select().from(companies).where(eq(companies.email, email))
-      : [];
-    if (existingEmail.length > 0) {
+    const username = buildUsername(normalizedEmail);
+    const existing = await db
+      .select()
+      .from(companies)
+      .where(or(eq(companies.email, normalizedEmail), eq(companies.username, username)));
+
+    if (existing.length > 0) {
       return res.status(409).json({ error: "An account with this email already exists" });
     }
 
-    const passwordHash = await bcrypt.hash(password, 12);
+    const passwordHash = await bcrypt.hash(String(password), 12);
     const sessionToken = randomBytes(32).toString("hex");
+    const trialEndsAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 14);
 
     const [company] = await db
       .insert(companies)
-      .values({ name, industry, email, modules: "not_selected", passwordHash, sessionToken })
+      .values({
+        name: String(name).trim(),
+        displayName: String(name).trim(),
+        username,
+        industry: String(industry).trim(),
+        email: normalizedEmail,
+        modules: "not_selected",
+        billingPlan: "starter",
+        billingStatus: "trialing",
+        trialEndsAt,
+        passwordHash,
+        sessionToken,
+      })
       .returning();
 
-    const { passwordHash: _ph, sessionToken: _st, ...safeCompany } = company;
-    return res.status(201).json({ company: safeCompany, sessionToken });
+    setCompanySession(res, sessionToken);
+    return res.status(201).json({ company: toSafeCompany(company) });
   } catch (err) {
     console.error("createCompany error:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
 
-router.patch("/companies/:id/modules", async (req, res) => {
+router.patch("/companies/:id/modules", requireCompanyAuth, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+    const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const id = Number.parseInt(rawId, 10);
+    if (Number.isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+    if (!req.company || req.company.id !== id) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
     const { modules } = req.body;
     if (!["cosiri", "gmp", "both"].includes(modules)) {
       return res.status(400).json({ error: "modules must be cosiri, gmp, or both" });
     }
+
     const [company] = await db
       .update(companies)
-      .set({ modules })
+      .set({ modules, updatedAt: new Date() })
       .where(eq(companies.id, id))
       .returning();
+
     if (!company) return res.status(404).json({ error: "Company not found" });
-    const { passwordHash: _ph, sessionToken: _st, ...safeCompany } = company;
-    return res.json({ company: safeCompany });
+    return res.json({ company: toSafeCompany(company) });
   } catch (err) {
     console.error("updateModules error:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
 
-router.get("/companies/:id", async (req, res) => {
+router.get("/companies/:id", requireCompanyAuth, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+    const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const id = Number.parseInt(rawId, 10);
+    if (Number.isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+    if (!req.company || req.company.id !== id) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
     const [company] = await db.select().from(companies).where(eq(companies.id, id));
     if (!company) return res.status(404).json({ error: "Not found" });
-    const { passwordHash: _ph, sessionToken: _st, ...safeCompany } = company;
-    return res.json(safeCompany);
+    return res.json(toSafeCompany(company));
   } catch (err) {
     console.error("getCompany error:", err);
     return res.status(500).json({ error: "Internal server error" });
@@ -77,3 +111,4 @@ router.get("/companies/:id", async (req, res) => {
 });
 
 export default router;
+

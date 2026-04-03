@@ -1,18 +1,18 @@
-import { Router, type IRouter, type Request, type Response } from "express";
+import express, { Router, type IRouter, type Request, type Response } from "express";
 import { Readable } from "stream";
 import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage.js";
 
 const RequestUploadUrlBody = {
   safeParse: (data: unknown) => {
     if (!data || typeof data !== "object") return { success: false as const };
-    const d = data as Record<string, unknown>;
-    if (typeof d.name !== "string") return { success: false as const };
+    const payload = data as Record<string, unknown>;
+    if (typeof payload.name !== "string") return { success: false as const };
     return {
       success: true as const,
       data: {
-        name: d.name,
-        size: d.size as number | undefined,
-        contentType: d.contentType as string | undefined,
+        name: payload.name,
+        size: payload.size as number | undefined,
+        contentType: payload.contentType as string | undefined,
       },
     };
   },
@@ -37,6 +37,22 @@ router.post("/storage/uploads/request-url", async (req: Request, res: Response) 
   } catch (error) {
     console.error("Error generating upload URL:", error);
     res.status(500).json({ error: "Failed to generate upload URL" });
+  }
+});
+
+router.put("/storage/uploads/:objectId", express.raw({ type: "*/*", limit: "25mb" }), async (req: Request, res: Response) => {
+  try {
+    const body = req.body;
+    if (!body || !(body instanceof Buffer) || body.length === 0) {
+      return res.status(400).json({ error: "Upload body is required" });
+    }
+
+    const objectId = Array.isArray(req.params.objectId) ? req.params.objectId[0] : req.params.objectId;
+    const objectPath = await objectStorageService.writeObjectEntity(objectId, body);
+    return res.status(201).json({ objectPath });
+  } catch (error) {
+    console.error("Error saving upload:", error);
+    return res.status(500).json({ error: "Failed to store upload" });
   }
 });
 
@@ -95,3 +111,4 @@ router.get("/storage/objects/*path", async (req: Request, res: Response) => {
 });
 
 export default router;
+

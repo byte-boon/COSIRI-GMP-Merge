@@ -51,7 +51,7 @@ export default function Registration() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema as any),
     defaultValues: { name: "", industry: "", email: "", password: "", confirmPassword: "" }
   });
 
@@ -74,7 +74,7 @@ export default function Registration() {
         setApiError(body.error || "Registration failed. Please try again.");
         return;
       }
-      setAuth(body.company, body.sessionToken);
+      setAuth(body.company);
       setLocation("/select-module");
     } catch (error) {
       setApiError("Network error. Please check your connection and try again.");
@@ -151,7 +151,7 @@ export default function Registration() {
                   Go to dashboard
                 </button>
                 <button
-                  onClick={() => logout()}
+                  onClick={() => { void logout(); }}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-xs font-semibold text-muted-foreground hover:text-destructive hover:border-destructive/40 hover:bg-destructive/5 transition-colors"
                 >
                   <LogOut className="w-3.5 h-3.5" /> Sign out
@@ -274,3 +274,5 @@ export default function Registration() {
     </div>
   );
 }
+
+
