@@ -151,7 +151,7 @@ export default function Registration() {
                   Go to dashboard
                 </button>
                 <button
-                  onClick={() => { void logout(); }}
+                  onClick={async () => { await logout(); }}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-xs font-semibold text-muted-foreground hover:text-destructive hover:border-destructive/40 hover:bg-destructive/5 transition-colors"
                 >
                   <LogOut className="w-3.5 h-3.5" /> Sign out

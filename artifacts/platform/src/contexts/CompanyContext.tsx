@@ -67,13 +67,14 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
+    setCompany(null);
+    setIsLoading(false);
     try {
       await fetch(`${BASE}/api/auth/logout`, {
         method: "POST",
         credentials: "include",
       });
     } catch {}
-    setCompany(null);
   };
 
   return (

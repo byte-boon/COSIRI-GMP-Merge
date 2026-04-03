@@ -116,7 +116,7 @@ export default function Login() {
                   Go to dashboard
                 </button>
                 <button
-                  onClick={() => { void logout(); }}
+                  onClick={async () => { await logout(); }}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-xs font-semibold text-muted-foreground hover:text-destructive hover:border-destructive/40 hover:bg-destructive/5 transition-colors"
                 >
                   <LogOut className="w-3.5 h-3.5" /> Sign out
@@ -145,7 +145,7 @@ export default function Login() {
                   {...form.register("email")}
                   type="text"
                   className="w-full pl-10 pr-4 py-3 rounded-xl bg-card border border-border focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
-                  placeholder="admin@acme.com or admin"
+                  placeholder="user or user@example.com"
                 />
               </div>
               {form.formState.errors.email && <p className="text-destructive text-xs mt-1">{form.formState.errors.email.message}</p>}

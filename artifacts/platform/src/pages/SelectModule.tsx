@@ -107,7 +107,7 @@ export default function SelectModule() {
               Signed in as <span className="font-medium text-foreground">{company.name}</span>
             </span>
             <button
-              onClick={() => { void logout(); setLocation("/login"); }}
+              onClick={async () => { await logout(); setLocation("/login"); }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-destructive hover:border-destructive/30 transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" /> Sign out

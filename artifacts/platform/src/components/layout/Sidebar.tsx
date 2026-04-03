@@ -238,9 +238,9 @@ export function Sidebar({ open, onClose }: { open?: boolean; onClose?: () => voi
           {/* Sign out */}
           <div className="px-3 pb-3">
             <button
-              onClick={() => {
-                void logout();
-                window.location.href = import.meta.env.BASE_URL;
+              onClick={async () => {
+                await logout();
+                window.location.href = `${BASE}/login`;
               }}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-sidebar-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-all"
             >
