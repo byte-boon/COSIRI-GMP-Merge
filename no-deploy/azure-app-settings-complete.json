@@ -3,7 +3,7 @@
   { "name": "BASE_PATH", "value": "/", "slotSetting": false },
   { "name": "NODE_ENV", "value": "production", "slotSetting": false },
   { "name": "APP_BASE_URL", "value": "https://cosiri.ngstco.com", "slotSetting": false },
-  { "name": "DATABASE_URL", "value": "postgresql://esghubadmin:%40Ahmed%40Saas12@esghub-prod-pg.postgres.database.azure.com:5432/cosiri_gmp_merge?sslmode=require", "slotSetting": false },
+  { "name": "DATABASE_URL", "value": "postgresql://esghubadmin:%40Ahmed%40Saas12@esghub-prod-pg-sweden.postgres.database.azure.com:5432/cosiri_gmp_merge?sslmode=require", "slotSetting": false },
   { "name": "PRIVATE_OBJECT_DIR", "value": "/home/site/wwwroot/storage/private", "slotSetting": false },
   { "name": "PUBLIC_OBJECT_SEARCH_PATHS", "value": "/home/site/wwwroot/dist/public", "slotSetting": false },
   { "name": "AI_INTEGRATIONS_OPENAI_API_KEY", "value": "", "slotSetting": false },

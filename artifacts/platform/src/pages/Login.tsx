@@ -16,6 +16,19 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+async function readLoginError(res: Response) {
+  const fallback = "Login failed. Please check your credentials.";
+  const contentType = res.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    const body = await res.json().catch(() => null);
+    return body?.error || body?.message || fallback;
+  }
+
+  await res.text().catch(() => "");
+  return fallback;
+}
+
 export default function Login() {
   const [, setLocation] = useLocation();
   const { setAuth, company, logout } = useCompany();
@@ -34,14 +47,15 @@ export default function Login() {
     try {
       const res = await fetch(`${BASE}/api/auth/login`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ identifier: data.email, password: data.password }),
       });
-      const body = await res.json();
       if (!res.ok) {
-        setApiError(body.error || "Login failed. Please check your credentials.");
+        setApiError(await readLoginError(res));
         return;
       }
+      const body = await res.json();
       setAuth(body.company);
       const destination = (!body.company.modules || body.company.modules === "not_selected")
         ? "/select-module"
