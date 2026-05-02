@@ -10,7 +10,7 @@ const router = Router();
 
 router.post("/auth/login", async (req, res) => {
   try {
-    const identifier = String(req.body.identifier ?? req.body.email ?? "").trim();
+    const identifier = String(req.body.identifier ?? req.body.username ?? req.body.email ?? "").trim();
     const password = String(req.body.password ?? "");
 
     if (!identifier || !password) {

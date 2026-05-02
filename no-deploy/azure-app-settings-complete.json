@@ -18,7 +18,7 @@
   { "name": "PAYPAL_PLAN_UNLIMITED_ANNUAL", "value": "P-1XJ925580P7190235NHHXC6A", "slotSetting": false },
   { "name": "PAYPAL_PLAN_UNLIMITED_MONTHLY", "value": "P-31129897UG806234NNHHXC6I", "slotSetting": false },
   { "name": "DEFAULT_ADMIN_USERNAME", "value": "admin", "slotSetting": false },
-  { "name": "DEFAULT_ADMIN_EMAIL", "value": "ahmeddidrisy@yahoo.com", "slotSetting": false },
+  { "name": "DEFAULT_ADMIN_EMAIL", "value": "ahmedidrisy@yahoo.com", "slotSetting": false },
   { "name": "DEFAULT_ADMIN_PASSWORD", "value": "sEG1NV8L9053Z3xyA1!", "slotSetting": false },
   { "name": "DEFAULT_ADMIN_DISPLAY_NAME", "value": "COSIRI Administrator", "slotSetting": false },
   { "name": "WEBSITE_WARMUP_PATH", "value": "/readyz", "slotSetting": false },
